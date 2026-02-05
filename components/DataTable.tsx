@@ -47,8 +47,6 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
       const monthsToHide = ["Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
       
       headers.forEach((header, index) => {
-        // Check if header exactly matches month name or contains it (e.g. "Feb")
-        // Exclude "Total" columns just in case
         if (monthsToHide.some(m => header.includes(m) && !header.includes("Total"))) {
           indices.add(index);
         }
@@ -75,12 +73,15 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
       "Current Assets", "Non-Current Assets", "Current Liabilities", "Non-Current Liabilities", "Stockholder's Equity"
     ];
 
-    const standaloneKeywords = [
+    let standaloneKeywords = [
       "Beginning balances", "Ending balances", "기초잔액", "기말잔액",
-      "CoGs", "Discount Rate",
-      "Assets", "Liabilities"
-      // Removed Intangible Assets to include them in Operating activities
+      "CoGs", "Discount Rate"
     ];
+
+    // Add BS specific standalone keywords only if NOT CF (to avoid matching "Intangible Assets" in CF)
+    if (!isCF) {
+      standaloneKeywords.push("Assets", "Liabilities");
+    }
 
     rows.forEach((row, index) => {
       const firstCell = row[0] || ""; 
@@ -88,7 +89,10 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
       const content = firstCell + secondCell;
 
       const isParent = parentKeywords.some(k => content.includes(k));
-      const isStandalone = standaloneKeywords.some(k => content.includes(k));
+      
+      // Strict check: if isParent is true, it cannot be standalone
+      // But standalone check needs to be careful not to false positive
+      const isStandalone = !isParent && standaloneKeywords.some(k => content.includes(k));
 
       if (isStandalone) {
          currentGroup = null;
@@ -124,7 +128,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
     });
 
     return groups;
-  }, [rows]);
+  }, [rows, isCF]); // Added isCF dependency
 
   const toggleGroup = (id: string) => {
     setExpandedGroups(prev => ({
