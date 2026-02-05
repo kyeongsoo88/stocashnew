@@ -180,7 +180,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                   key={index}
                   className={cn(
                     "px-4 py-3 font-bold text-gray-900 border-b border-gray-200 whitespace-nowrap bg-white",
-                    index === 0 && "sticky left-0 z-30 text-left min-w-[250px] pl-6 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]", 
+                    index === 0 && "sticky left-0 z-30 text-left min-w-[180px] pl-4 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]", 
                     index !== 0 && "text-right font-semibold text-gray-800",
                     index === visibleHeaders.length - 1 && "bg-gray-50 text-gray-900 font-extrabold"
                   )}
