@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { ChevronRight, ChevronDown } from 'lucide-react';
@@ -18,76 +18,96 @@ interface GroupedRow {
   data: string[];
   children: string[][];
   isHeader: boolean;
+  depth: number; // 0 for root, 1 for parent, 2 for child
 }
 
 export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) => {
   // Toggle state for row groups
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    "Operating activities": true,
-    "Investing activities": true,
-    "Financing activities": true,
-    "영업활동": true,
-    "투자활동": true,
-    "재무활동": true,
-  });
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+  // Initialize all groups to expanded on load
+  useEffect(() => {
+    // This effect runs when rows change to set default expanded state
+    // We can't do this easily in useMemo without side effects
+    setExpandedGroups(prev => {
+        // Expand all by default
+        return prev; // Or logic to expand all new keys
+    });
+  }, [rows]);
 
   // Grouping logic based on specific keywords
   const groupedData = useMemo(() => {
     const groups: GroupedRow[] = [];
     let currentGroup: GroupedRow | null = null;
 
-    // Keywords that start a new group (Parent rows)
-    // English or Korean keywords based on CSV content
+    // Keywords that start a new group (Parent rows that have children)
     const parentKeywords = [
+      // CF
       "Operating activities", "Investing activities", "Financing activities",
-      "영업활동", "투자활동", "재무활동"
+      "영업활동", "투자활동", "재무활동",
+      // PL
+      "MSRP Sales", "Net Sales", "Direct Cost", "G&A", "Other Income",
+      // BS (Sub-categories treated as parents)
+      "Current Assets", "Non-Current Assets", "Current Liabilities", "Non-Current Liabilities", "Stockholder's Equity"
     ];
 
-    // Keywords that are standalone (No children)
+    // Keywords that are standalone headers (Grand parents or simple headers)
     const standaloneKeywords = [
-      "Beginning balances", "Ending balances",
-      "기초잔액", "기말잔액"
+      // CF
+      "Beginning balances", "Ending balances", "기초잔액", "기말잔액",
+      // PL
+      "CoGs", "Discount Rate",
+      // BS (Root categories)
+      "Assets", "Liabilities"
     ];
 
     rows.forEach((row, index) => {
-      const firstCell = row[0] || ""; // Content column
-      const secondCell = row[1] || ""; // Korean label column
+      const firstCell = row[0] || ""; 
+      const secondCell = row[1] || ""; // For CF korean column
+      const content = firstCell + secondCell;
 
-      // Check if this row is a parent
-      const isParent = parentKeywords.some(k => firstCell.includes(k) || secondCell.includes(k));
-      // Check if this row is standalone
-      const isStandalone = standaloneKeywords.some(k => firstCell.includes(k) || secondCell.includes(k));
+      // Check for Parent
+      const isParent = parentKeywords.some(k => content.includes(k));
+      // Check for Standalone
+      // Precise match or starts with for some
+      const isStandalone = standaloneKeywords.some(k => content.includes(k));
 
-      if (isParent) {
-        // Start a new group with children
+      if (isStandalone) {
+         // Standalone header - close previous group
+         currentGroup = null;
+         groups.push({
+           id: content + index,
+           data: row,
+           children: [],
+           isHeader: true,
+           depth: 0
+         });
+      } else if (isParent) {
+        // Start a new group
         currentGroup = {
-          id: firstCell + index, // unique id
+          id: content + index, // unique id
           data: row,
           children: [],
-          isHeader: true
+          isHeader: true,
+          depth: 1
         };
         groups.push(currentGroup);
-      } else if (isStandalone) {
-        // Standalone row (like Beginning/Ending balances) - treat as a group with no children or just a separate row
-        // Here we treat it as a header with no children effectively (or we can handle it separately)
-        currentGroup = null; // Reset current group so subsequent rows don't get added to it
-        groups.push({
-          id: firstCell + index,
-          data: row,
-          children: [],
-          isHeader: true // Render as bold/main row
-        });
+        // Ensure this new group is expanded by default (for initial render)
+        // Note: We can't set state here, handled by default value in map
       } else {
-        // This is a child row
+        // Child row
         if (currentGroup) {
           currentGroup.children.push(row);
         } else {
-          // Orphan row (shouldn't happen usually based on structure, but handle gracefully)
+          // Orphan row - treat as depth 0 or 1? 
+          // If it's PL items under standalone CoGs, maybe they should be separate?
+          // For now, treat as independent rows
           groups.push({
-            id: firstCell + index,
+            id: content + index,
             data: row,
             children: [],
-            isHeader: false
+            isHeader: false,
+            depth: 0
           });
         }
       }
@@ -99,7 +119,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
   const toggleGroup = (id: string) => {
     setExpandedGroups(prev => ({
       ...prev,
-      [id]: !prev[id]
+      [id]: !(prev[id] ?? true) // Default to true if undefined
     }));
   };
 
@@ -107,7 +127,6 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
 
   return (
     <div className="w-full flex flex-col h-full bg-white overflow-hidden">
-      {/* Optional Title */}
       {title && (
         <div className="p-4 border-b border-gray-200 bg-white font-bold text-lg text-gray-900">
           {title}
@@ -124,9 +143,9 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                   key={index}
                   className={cn(
                     "px-4 py-3 font-bold text-gray-900 border-b border-gray-200 whitespace-nowrap bg-white",
-                    index === 0 && "sticky left-0 z-30 text-left min-w-[250px] pl-6", // First column sticky
-                    index !== 0 && "text-right font-normal text-gray-600", // Data columns
-                    index === headers.length - 1 && "bg-gray-50 text-gray-900 font-bold" // Last column (Total) style
+                    index === 0 && "sticky left-0 z-30 text-left min-w-[250px] pl-6", 
+                    index !== 0 && "text-right font-normal text-gray-600",
+                    index === headers.length - 1 && "bg-gray-50 text-gray-900 font-bold"
                   )}
                 >
                   {header}
@@ -138,18 +157,18 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
           {/* Body */}
           <tbody className="divide-y divide-gray-100">
             {groupedData.map((group) => {
-              const isExpanded = expandedGroups[group.id] ?? true; // Default to expanded
+              const isExpanded = expandedGroups[group.id] ?? true; 
               const hasChildren = group.children.length > 0;
 
               return (
                 <React.Fragment key={group.id}>
-                  {/* Parent / Main Row */}
+                  {/* Parent Row */}
                   <tr 
                     onClick={() => hasChildren && toggleGroup(group.id)}
                     className={cn(
                       "group transition-colors",
                       hasChildren ? "cursor-pointer hover:bg-gray-50" : "hover:bg-gray-50",
-                      group.isHeader ? "font-bold text-gray-900 bg-gray-50/50" : ""
+                      group.isHeader ? "font-bold text-gray-900" : ""
                     )}
                   >
                     {group.data.map((cell, cellIndex) => {
@@ -161,13 +180,14 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                           key={cellIndex}
                           className={cn(
                             "px-4 py-3 whitespace-nowrap border-b border-gray-100",
-                            // First Column Styles
+                            // First Column
                             cellIndex === 0 && "sticky left-0 z-10 text-left flex items-center gap-2 bg-white group-hover:bg-gray-50", 
-                            // Other Columns Styles
+                            // Indentation for Depth 1 parents (if needed, currently flat for parents)
+                            // Other Columns
                             cellIndex !== 0 && "text-right",
-                            // Total Column Styles
+                            // Total Column
                             cellIndex === group.data.length - 1 && "bg-gray-50 group-hover:bg-gray-100 font-bold",
-                            // Negative Number Style
+                            // Negative
                             isNumber && isNegative && "text-red-600"
                           )}
                         >
@@ -176,12 +196,10 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                               {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                             </span>
                           )}
-                          {/* If no children but it is a header row (like Beginning Balance), add some spacing or icon placeholder if needed, currently just text */}
                           {cellIndex === 0 && !hasChildren && group.isHeader && (
-                             <span className="w-4 inline-block"></span> // Placeholder for alignment
+                             <span className="w-4 inline-block"></span> 
                           )}
                           
-                          {/* Format negative numbers with parentheses if needed, or keep red color */}
                           {isNumber && isNegative ? cell.replace('-', '(').replace('$', '$ ') + ')' : cell}
                         </td>
                       );
@@ -203,13 +221,10 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                             key={cellIndex}
                             className={cn(
                               "px-4 py-2 whitespace-nowrap border-b border-gray-100 text-gray-600",
-                              // First Column (Indented)
+                              // Indentation for Children (pl-10)
                               cellIndex === 0 && "sticky left-0 z-10 text-left pl-10 bg-white",
-                              // Other Columns
                               cellIndex !== 0 && "text-right font-normal",
-                               // Total Column
                               cellIndex === childRow.length - 1 && "bg-gray-50 font-medium text-gray-900",
-                              // Negative Number
                               isNumber && isNegative && "text-red-500"
                             )}
                           >
