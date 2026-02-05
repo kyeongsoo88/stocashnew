@@ -28,10 +28,8 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
   // Initialize all groups to expanded on load
   useEffect(() => {
     // This effect runs when rows change to set default expanded state
-    // We can't do this easily in useMemo without side effects
     setExpandedGroups(prev => {
-        // Expand all by default
-        return prev; // Or logic to expand all new keys
+        return prev; 
     });
   }, [rows]);
 
@@ -99,9 +97,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
         if (currentGroup) {
           currentGroup.children.push(row);
         } else {
-          // Orphan row - treat as depth 0 or 1? 
-          // If it's PL items under standalone CoGs, maybe they should be separate?
-          // For now, treat as independent rows
+          // Orphan row - treat as independent rows
           groups.push({
             id: content + index,
             data: row,
@@ -144,8 +140,8 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                   className={cn(
                     "px-4 py-3 font-bold text-gray-900 border-b border-gray-200 whitespace-nowrap bg-white",
                     index === 0 && "sticky left-0 z-30 text-left min-w-[250px] pl-6", 
-                    index !== 0 && "text-right font-normal text-gray-600",
-                    index === headers.length - 1 && "bg-gray-50 text-gray-900 font-bold"
+                    index !== 0 && "text-right font-semibold text-gray-800", // Darker text for headers
+                    index === headers.length - 1 && "bg-gray-50 text-gray-900 font-extrabold"
                   )}
                 >
                   {header}
@@ -168,7 +164,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                     className={cn(
                       "group transition-colors",
                       hasChildren ? "cursor-pointer hover:bg-gray-50" : "hover:bg-gray-50",
-                      group.isHeader ? "font-bold text-gray-900" : ""
+                      group.isHeader ? "font-bold text-gray-900" : "font-medium text-gray-900" // Ensure parent rows are dark
                     )}
                   >
                     {group.data.map((cell, cellIndex) => {
@@ -179,7 +175,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                         <td
                           key={cellIndex}
                           className={cn(
-                            "px-4 py-3 whitespace-nowrap border-b border-gray-100",
+                            "px-4 py-3 whitespace-nowrap border-b border-gray-100 text-gray-900", // Default to dark text
                             // First Column
                             cellIndex === 0 && "sticky left-0 z-10 text-left flex items-center gap-2 bg-white group-hover:bg-gray-50", 
                             // Indentation for Depth 1 parents (if needed, currently flat for parents)
@@ -192,7 +188,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                           )}
                         >
                           {cellIndex === 0 && hasChildren && (
-                            <span className="text-gray-400">
+                            <span className="text-gray-500">
                               {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                             </span>
                           )}
@@ -220,12 +216,12 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                           <td
                             key={cellIndex}
                             className={cn(
-                              "px-4 py-2 whitespace-nowrap border-b border-gray-100 text-gray-600",
+                              "px-4 py-2 whitespace-nowrap border-b border-gray-100 text-gray-800", // Darker text (was gray-600)
                               // Indentation for Children (pl-10)
                               cellIndex === 0 && "sticky left-0 z-10 text-left pl-10 bg-white",
                               cellIndex !== 0 && "text-right font-normal",
                               cellIndex === childRow.length - 1 && "bg-gray-50 font-medium text-gray-900",
-                              isNumber && isNegative && "text-red-500"
+                              isNumber && isNegative && "text-red-600" // Red for negative
                             )}
                           >
                              {isNumber && isNegative ? cell.replace('-', '(').replace('$', '$ ') + ')' : cell}
