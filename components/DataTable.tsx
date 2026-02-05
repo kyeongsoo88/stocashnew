@@ -49,20 +49,21 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
   
   const visibleHeaders = headers.filter((_, index) => !hiddenColumnIndices.has(index));
 
-  // Grouping logic: "영업활동" is parent, subsequent rows until "net cash" are children
+  // Grouping logic: 기초잔액/기말잔액 are standalone, 영업활동/투자활동/재무활동 are parents
   const groupedData = useMemo(() => {
     const groups: GroupedRow[] = [];
     let currentGroup: GroupedRow | null = null;
 
-    const parentKeywords = ["영업활동"];
+    const parentKeywords = ["영업활동", "투자활동", "재무활동"];
+    const standaloneKeywords = ["기초잔액", "기말잔액", "운전자본 합계"];
 
     rows.forEach((row, index) => {
       const firstCell = row[0] || "";
       const isParent = parentKeywords.some(k => firstCell.includes(k));
-      const isStandalone = firstCell.includes("net cash") || firstCell.includes("운전자본 합계");
+      const isStandalone = standaloneKeywords.some(k => firstCell.includes(k));
       
       if (isStandalone) {
-        // Standalone row (no children)
+        // Standalone row (no children) - 기초잔액, 기말잔액
         currentGroup = null;
         groups.push({
           id: firstCell + index,
@@ -71,7 +72,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
           isHeader: true
         });
       } else if (isParent) {
-        // Start new group
+        // Start new group - 영업활동, 투자활동, 재무활동
         currentGroup = {
           id: firstCell + index,
           data: row,
@@ -80,11 +81,11 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
         };
         groups.push(currentGroup);
       } else {
-        // Child row
+        // Child row - 부모 그룹의 하위 항목들
         if (currentGroup) {
           currentGroup.children.push(row);
         } else {
-          // Orphan row (no parent)
+          // Orphan row (no parent) - 혹시 모를 독립 항목
           groups.push({
             id: firstCell + index,
             data: row,
@@ -167,13 +168,22 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                     className={cn(
                       "group transition-colors",
                       hasChildren ? "cursor-pointer hover:bg-gray-50" : "hover:bg-gray-50",
-                      group.isHeader ? "font-bold text-gray-900 bg-gray-50" : "font-medium text-gray-900"
+                      // Highlight 기초잔액 and 기말잔액
+                      group.isHeader && (group.data[0]?.includes("기초잔액") || group.data[0]?.includes("기말잔액")) 
+                        ? "font-bold text-gray-900 bg-blue-50" 
+                        : group.isHeader && group.data[0]?.includes("투자활동")
+                        ? "font-bold text-gray-900 bg-green-50"
+                        : group.isHeader 
+                        ? "font-bold text-gray-900 bg-gray-50" 
+                        : "font-medium text-gray-900"
                     )}
                   >
                     {visibleData.map((cell, cellIndex) => {
                       const isLast = cellIndex === visibleData.length - 1;
                       const cellValue = formatNumber(cell);
                       const negative = isNegative(cell);
+                      const isBeginningOrEnding = group.data[0]?.includes("기초잔액") || group.data[0]?.includes("기말잔액");
+                      const isInvesting = group.data[0]?.includes("투자활동");
                       
                       return (
                         <td
@@ -181,11 +191,19 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                           className={cn(
                             "px-4 py-3 border-b border-gray-100 whitespace-nowrap",
                             // First Column
-                            cellIndex === 0 && "sticky left-0 z-10 text-left flex items-center gap-2 bg-white group-hover:bg-gray-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]", 
+                            cellIndex === 0 && "sticky left-0 z-10 text-left flex items-center gap-2 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
+                            cellIndex === 0 && isBeginningOrEnding && "bg-blue-50 group-hover:bg-blue-100",
+                            cellIndex === 0 && isInvesting && "bg-green-50 group-hover:bg-green-100",
+                            cellIndex === 0 && !isBeginningOrEnding && !isInvesting && "bg-white group-hover:bg-gray-50",
                             // Middle Columns
                             cellIndex !== 0 && !isLast && "text-right",
+                            cellIndex !== 0 && !isLast && isBeginningOrEnding && "bg-blue-50",
+                            cellIndex !== 0 && !isLast && isInvesting && "bg-green-50",
                             // Last Column (YoY)
-                            isLast && "text-right bg-gray-50 group-hover:bg-gray-100 font-bold",
+                            isLast && "text-right font-bold",
+                            isLast && isBeginningOrEnding && "bg-blue-50 group-hover:bg-blue-100",
+                            isLast && isInvesting && "bg-green-50 group-hover:bg-green-100",
+                            isLast && !isBeginningOrEnding && !isInvesting && "bg-gray-50 group-hover:bg-gray-100",
                             // Negative numbers
                             negative && "text-red-600"
                           )}
