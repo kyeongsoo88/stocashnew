@@ -6,27 +6,10 @@ import { DataTable } from "@/components/DataTable";
 import { 
   Loader2, 
   RefreshCw, 
-  TrendingUp, 
-  Briefcase, 
   Wallet,
 } from "lucide-react";
 
-type Tab = "CF" | "PL" | "BS";
-
-// Helper to parse currency string to number
-const parseCurrency = (value: string): number => {
-  if (!value) return 0;
-  // Remove $, commas, % and parentheses for negative numbers
-  let cleanValue = value.toString().replace(/[$,%]/g, '');
-  
-  // Handle negative numbers in parentheses (e.g. (1,234)) - though CSV usually has -1234
-  if (cleanValue.includes('(') && cleanValue.includes(')')) {
-    cleanValue = '-' + cleanValue.replace(/[()]/g, '');
-  }
-  
-  const num = parseFloat(cleanValue);
-  return isNaN(num) ? 0 : num;
-};
+type Tab = "CF";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("CF");
@@ -58,9 +41,7 @@ export default function Home() {
   }, [activeTab]);
 
   const tabs = [
-    { id: "CF", label: "현금흐름표", icon: Wallet, disabled: false },
-    { id: "PL", label: "손익계산서", icon: TrendingUp, disabled: false },
-    { id: "BS", label: "재무상태표", icon: Briefcase, disabled: false },
+    { id: "CF", label: "2026", icon: Wallet, disabled: false },
   ];
 
   return (
