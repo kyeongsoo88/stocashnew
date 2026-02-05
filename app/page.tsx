@@ -42,36 +42,7 @@ export default function Home() {
       const fileName = tab.toLowerCase() + ".csv";
       const result = await fetchAndParseCsv(`/data/${fileName}`);
       
-      // Calculate YoY for PL and CF tabs
-      if ((tab === "PL" || tab === "CF") && result.headers.length > 0) {
-        // Add YoY header
-        result.headers.push("YoY");
-        
-        // Calculate YoY for each row
-        result.rows = result.rows.map(row => {
-          // 2025 Total is usually at index 1 (after Content)
-          const val2025 = parseCurrency(row[1]);
-          // 2026 Total is at the last index
-          const val2026 = parseCurrency(row[row.length - 1]);
-          
-          let yoy = "";
-          
-          // Avoid division by zero
-          if (val2025 !== 0) {
-            const diff = val2026 - val2025;
-            const percent = (diff / Math.abs(val2025)) * 100;
-            yoy = (percent > 0 ? "+" : "") + percent.toFixed(1) + "%";
-          } else if (val2026 !== 0) {
-            // 2025 is 0 but 2026 has value -> 100% growth or new
-            yoy = "+100.0%"; // Or "New"
-          } else {
-            yoy = "-";
-          }
-          
-          return [...row, yoy];
-        });
-      }
-
+      // Use CSV data directly without auto-calculation
       setData(result);
       setLastUpdated(new Date());
     } catch (err) {

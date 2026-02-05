@@ -26,7 +26,6 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
   const [showMonthly, setShowMonthly] = useState(false);
 
   useEffect(() => {
-    // Initialize groups as collapsed (empty object or explicit false)
     setExpandedGroups({}); 
   }, [rows]);
 
@@ -44,9 +43,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
 
     // 2. Hide Monthly columns (Feb-Nov) if toggle is off
     if (!showMonthly) {
-      // Hide Feb to Nov only
       const monthsToHide = ["Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
-      
       headers.forEach((header, index) => {
         if (monthsToHide.some(m => header.includes(m) && !header.includes("Total"))) {
           indices.add(index);
@@ -67,14 +64,12 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
     const groups: GroupedRow[] = [];
     let currentGroup: GroupedRow | null = null;
 
-    // Common Parent Keywords (CF & PL)
     const parentKeywords = [
       "Operating activities", "Investing activities", "Financing activities",
       "영업활동", "투자활동", "재무활동",
       "MSRP Sales", "Net Sales", "Direct Cost", "G&A", "Other Income"
     ];
 
-    // Add BS Parent Keywords ONLY if NOT CF (to avoid false positives in CF content)
     if (!isCF) {
       parentKeywords.push(
         "Current Assets", "Non-Current Assets", "Current Liabilities", "Non-Current Liabilities", "Stockholder's Equity"
@@ -86,7 +81,6 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
       "CoGs", "Discount Rate"
     ];
 
-    // Add BS specific standalone keywords only if NOT CF
     if (!isCF) {
       standaloneKeywords.push("Assets", "Liabilities");
     }
@@ -97,8 +91,6 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
       const content = firstCell + secondCell;
 
       const isParent = parentKeywords.some(k => content.includes(k));
-      
-      // Strict check: if isParent is true, it cannot be standalone
       const isStandalone = !isParent && standaloneKeywords.some(k => content.includes(k));
 
       if (isStandalone) {
@@ -140,7 +132,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
   const toggleGroup = (id: string) => {
     setExpandedGroups(prev => ({
       ...prev,
-      [id]: !(prev[id] ?? false) // Toggle logic
+      [id]: !(prev[id] ?? false)
     }));
   };
 
@@ -175,26 +167,31 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
           {/* Header */}
           <thead className="bg-white sticky top-0 z-20">
             <tr>
-              {visibleHeaders.map((header, index) => (
-                <th
-                  key={index}
-                  className={cn(
-                    "px-4 py-3 font-bold text-gray-900 border-b border-gray-200 whitespace-nowrap bg-white",
-                    index === 0 && "sticky left-0 z-30 text-left min-w-[180px] pl-4 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]", 
-                    index !== 0 && "text-right font-semibold text-gray-800",
-                    index === visibleHeaders.length - 1 && "bg-gray-50 text-gray-900 font-extrabold"
-                  )}
-                >
-                  {header}
-                </th>
-              ))}
+              {visibleHeaders.map((header, index) => {
+                const isLast = index === visibleHeaders.length - 1;
+                return (
+                  <th
+                    key={index}
+                    className={cn(
+                      "px-4 py-3 font-bold text-gray-900 border-b border-gray-200 whitespace-nowrap bg-white",
+                      // First Column
+                      index === 0 && "sticky left-0 z-30 text-left min-w-[180px] pl-4 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]", 
+                      // Middle Columns (Data) - reduced width
+                      index !== 0 && !isLast && "text-right font-semibold text-gray-800 min-w-[100px]",
+                      // Last Column (Detail/Memo) - wider width
+                      isLast && "text-left font-extrabold min-w-[300px] bg-gray-50"
+                    )}
+                  >
+                    {header}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
 
           {/* Body */}
           <tbody className="divide-y divide-gray-100">
             {groupedData.map((group) => {
-              // Default to FALSE (Collapsed)
               const isExpanded = expandedGroups[group.id] ?? false; 
               const hasChildren = group.children.length > 0;
               const visibleData = getVisibleCells(group.data);
@@ -213,18 +210,21 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                     {visibleData.map((cell, cellIndex) => {
                       const isNumber = /^-?\$?[\d,]+(\.\d+)?%?$/.test(cell.trim()) || cell.trim() === '-';
                       const isNegative = cell.includes('-');
+                      const isLast = cellIndex === visibleData.length - 1;
                       
                       return (
                         <td
                           key={cellIndex}
                           className={cn(
-                            "px-4 py-3 whitespace-nowrap border-b border-gray-100 text-gray-900",
-                            // First Column (Sticky & Icon)
-                            cellIndex === 0 && "sticky left-0 z-10 text-left flex items-center gap-2 bg-white group-hover:bg-gray-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]", 
-                            cellIndex !== 0 && "text-right",
-                            // Total Column
-                            cellIndex === visibleData.length - 1 && "bg-gray-50 group-hover:bg-gray-100 font-bold",
-                            isNumber && isNegative && "text-red-600"
+                            "px-4 py-3 border-b border-gray-100 text-gray-900",
+                            // First Column
+                            cellIndex === 0 && "sticky left-0 z-10 text-left flex items-center gap-2 bg-white group-hover:bg-gray-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] whitespace-nowrap", 
+                            // Middle Columns
+                            cellIndex !== 0 && !isLast && "text-right whitespace-nowrap",
+                            // Last Column (Detail) - Allow text wrapping
+                            isLast && "text-left bg-gray-50 group-hover:bg-gray-100 font-normal text-gray-700 whitespace-normal break-words",
+                            // Number formatting
+                            !isLast && isNumber && isNegative && "text-red-600"
                           )}
                         >
                           {cellIndex === 0 && hasChildren && (
@@ -236,7 +236,8 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                              <span className="w-4 inline-block"></span> 
                           )}
                           
-                          {isNumber && isNegative ? cell.replace('-', '(').replace('$', '$ ') + ')' : cell}
+                          {/* Format numbers, but leave text as is for Last Column */}
+                          {!isLast && isNumber && isNegative ? cell.replace('-', '(').replace('$', '$ ') + ')' : cell}
                         </td>
                       );
                     })}
@@ -253,20 +254,24 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
                         {visibleChildData.map((cell, cellIndex) => {
                           const isNumber = /^-?\$?[\d,]+(\.\d+)?%?$/.test(cell.trim()) || cell.trim() === '-';
                           const isNegative = cell.includes('-');
+                          const isLast = cellIndex === visibleChildData.length - 1;
 
                           return (
                             <td
                               key={cellIndex}
                               className={cn(
-                                "px-4 py-2 whitespace-nowrap border-b border-gray-100 text-gray-800",
-                                // First Column Indentation
-                                cellIndex === 0 && "sticky left-0 z-10 text-left pl-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
-                                cellIndex !== 0 && "text-right font-normal",
-                                cellIndex === visibleChildData.length - 1 && "bg-gray-50 font-medium text-gray-900",
-                                isNumber && isNegative && "text-red-600"
+                                "px-4 py-2 border-b border-gray-100 text-gray-800",
+                                // Indentation
+                                cellIndex === 0 && "sticky left-0 z-10 text-left pl-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] whitespace-nowrap",
+                                // Middle Columns
+                                cellIndex !== 0 && !isLast && "text-right font-normal whitespace-nowrap",
+                                // Last Column (Detail)
+                                isLast && "text-left bg-gray-50 font-normal text-gray-600 whitespace-normal break-words",
+                                // Number formatting
+                                !isLast && isNumber && isNegative && "text-red-600"
                               )}
                             >
-                               {isNumber && isNegative ? cell.replace('-', '(').replace('$', '$ ') + ')' : cell}
+                               {!isLast && isNumber && isNegative ? cell.replace('-', '(').replace('$', '$ ') + ')' : cell}
                             </td>
                           );
                         })}
