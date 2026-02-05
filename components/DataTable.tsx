@@ -74,9 +74,8 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
     const standaloneKeywords = [
       "Beginning balances", "Ending balances", "기초잔액", "기말잔액",
       "CoGs", "Discount Rate",
-      "Assets", "Liabilities",
-      // Stop Operating Activities grouping here
-      "Intangible Assets", "무형자산" 
+      "Assets", "Liabilities"
+      // Removed Intangible Assets to include them in Operating activities
     ];
 
     rows.forEach((row, index) => {
@@ -93,8 +92,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
            id: content + index,
            data: row,
            children: [],
-           isHeader: true, // Render as bold? Or just normal? Usually standalones are bold headers. 
-                           // If user just wants them out of the group, maybe header style is acceptable.
+           isHeader: true,
            depth: 0
          });
       } else if (isParent) {
