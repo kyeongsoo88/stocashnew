@@ -134,9 +134,9 @@ export default function Home() {
               <p>{error}</p>
             </div>
           ) : (
-            <div className={`grid gap-6 h-full ${!showMonthly ? 'grid-cols-12' : 'grid-cols-1'}`}>
+            <div className={`grid gap-6 h-full ${!showMonthly && selectedYear === "2026" ? 'grid-cols-12' : 'grid-cols-1'}`}>
               {/* Left Column: Tables */}
-              <div className={`${!showMonthly ? 'col-span-7' : 'col-span-12'} overflow-y-auto space-y-6 pr-2 pb-6`}>
+              <div className={`${!showMonthly && selectedYear === "2026" ? 'col-span-7' : 'col-span-12'} overflow-y-auto space-y-6 pr-2 pb-6`}>
                 {/* Cash Flow Table */}
                 {cashflowData && (
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -208,8 +208,8 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Right Column: Analysis (only when !showMonthly) */}
-              {!showMonthly && (
+              {/* Right Column: Analysis (only when !showMonthly AND selectedYear is 2026) */}
+              {!showMonthly && selectedYear === "2026" && (
                 <div className="col-span-5 h-full overflow-hidden pb-6">
                   <DashboardAnalysis />
                 </div>
