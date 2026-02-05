@@ -6,11 +6,9 @@ import { DataTable } from "@/components/DataTable";
 import { 
   Loader2, 
   RefreshCw, 
-  LayoutDashboard, 
   TrendingUp, 
   Briefcase, 
   Wallet,
-  PieChart
 } from "lucide-react";
 
 type Tab = "CF" | "PL" | "BS";
@@ -43,11 +41,9 @@ export default function Home() {
   }, [activeTab]);
 
   const tabs = [
-    { id: "dashboard", label: "대시보드", icon: LayoutDashboard, disabled: true },
+    { id: "CF", label: "현금흐름표", icon: Wallet, disabled: false },
     { id: "PL", label: "손익계산서", icon: TrendingUp, disabled: false },
     { id: "BS", label: "재무상태표", icon: Briefcase, disabled: false },
-    { id: "CF", label: "현금흐름표", icon: Wallet, disabled: false },
-    { id: "analysis", label: "영업비 분석", icon: PieChart, disabled: true },
   ];
 
   return (
