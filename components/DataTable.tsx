@@ -66,19 +66,26 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
     const groups: GroupedRow[] = [];
     let currentGroup: GroupedRow | null = null;
 
+    // Common Parent Keywords (CF & PL)
     const parentKeywords = [
       "Operating activities", "Investing activities", "Financing activities",
       "영업활동", "투자활동", "재무활동",
-      "MSRP Sales", "Net Sales", "Direct Cost", "G&A", "Other Income",
-      "Current Assets", "Non-Current Assets", "Current Liabilities", "Non-Current Liabilities", "Stockholder's Equity"
+      "MSRP Sales", "Net Sales", "Direct Cost", "G&A", "Other Income"
     ];
+
+    // Add BS Parent Keywords ONLY if NOT CF (to avoid false positives in CF content)
+    if (!isCF) {
+      parentKeywords.push(
+        "Current Assets", "Non-Current Assets", "Current Liabilities", "Non-Current Liabilities", "Stockholder's Equity"
+      );
+    }
 
     let standaloneKeywords = [
       "Beginning balances", "Ending balances", "기초잔액", "기말잔액",
       "CoGs", "Discount Rate"
     ];
 
-    // Add BS specific standalone keywords only if NOT CF (to avoid matching "Intangible Assets" in CF)
+    // Add BS specific standalone keywords only if NOT CF
     if (!isCF) {
       standaloneKeywords.push("Assets", "Liabilities");
     }
@@ -91,7 +98,6 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
       const isParent = parentKeywords.some(k => content.includes(k));
       
       // Strict check: if isParent is true, it cannot be standalone
-      // But standalone check needs to be careful not to false positive
       const isStandalone = !isParent && standaloneKeywords.some(k => content.includes(k));
 
       if (isStandalone) {
@@ -128,7 +134,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
     });
 
     return groups;
-  }, [rows, isCF]); // Added isCF dependency
+  }, [rows, isCF]);
 
   const toggleGroup = (id: string) => {
     setExpandedGroups(prev => ({
