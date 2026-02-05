@@ -7,18 +7,31 @@ export interface ParsedData {
 
 export const fetchAndParseCsv = async (filePath: string): Promise<ParsedData> => {
   const response = await fetch(filePath);
-  const reader = response.body?.getReader();
-  const result = await reader?.read();
-  const decoder = new TextDecoder('utf-8');
-  const csv = decoder.decode(result?.value);
+  const arrayBuffer = await response.arrayBuffer();
+  
+  // 1. Try decoding as UTF-8 first
+  const decoderUtf8 = new TextDecoder('utf-8');
+  let csv = decoderUtf8.decode(arrayBuffer);
+
+  // 2. Check for replacement characters () which indicate encoding issues
+  // If found, try decoding as EUC-KR (common for Korean Excel CSVs)
+  if (csv.includes('')) {
+    const decoderEucKr = new TextDecoder('euc-kr');
+    csv = decoderEucKr.decode(arrayBuffer);
+  }
 
   return new Promise((resolve, reject) => {
     Papa.parse(csv, {
-      header: false, // We handle headers manually to preserve order/duplicates if any
+      header: false, 
       skipEmptyLines: true,
       complete: (results) => {
         const data = results.data as string[][];
         if (data.length > 0) {
+          // Remove any BOM (Byte Order Mark) if present in the first cell
+          if (data[0][0]) {
+            data[0][0] = data[0][0].replace(/^\uFEFF/, '');
+          }
+          
           resolve({
             headers: data[0],
             rows: data.slice(1),
@@ -33,4 +46,3 @@ export const fetchAndParseCsv = async (filePath: string): Promise<ParsedData> =>
     });
   });
 };
-
