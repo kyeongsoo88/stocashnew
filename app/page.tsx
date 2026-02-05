@@ -42,8 +42,8 @@ export default function Home() {
       const fileName = tab.toLowerCase() + ".csv";
       const result = await fetchAndParseCsv(`/data/${fileName}`);
       
-      // Calculate YoY for PL tab
-      if (tab === "PL" && result.headers.length > 0) {
+      // Calculate YoY for PL and CF tabs
+      if ((tab === "PL" || tab === "CF") && result.headers.length > 0) {
         // Add YoY header
         result.headers.push("YoY");
         
