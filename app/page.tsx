@@ -6,27 +6,36 @@ import { DataTable } from "@/components/DataTable";
 import { 
   Loader2, 
   RefreshCw, 
-  Wallet,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
-type Tab = "CF";
+type Year = "2025" | "2026";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<Tab>("CF");
-  const [data, setData] = useState<ParsedData | null>(null);
+  const [selectedYear, setSelectedYear] = useState<Year>("2026");
+  const [cashflowData, setCashflowData] = useState<ParsedData | null>(null);
+  const [workingCapitalData, setWorkingCapitalData] = useState<ParsedData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [showMonthly, setShowMonthly] = useState(false);
+  const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>({
+    cashflow: true,
+    workingcapital: true,
+  });
 
-  const fetchData = async (tab: Tab) => {
+  const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const fileName = tab.toLowerCase() + ".csv";
-      const result = await fetchAndParseCsv(`/data/${fileName}`);
+      const [cfResult, wcResult] = await Promise.all([
+        fetchAndParseCsv(`/data/cashflow.csv`),
+        fetchAndParseCsv(`/data/workingcapital.csv`),
+      ]);
       
-      // Use CSV data directly without auto-calculation
-      setData(result);
+      setCashflowData(cfResult);
+      setWorkingCapitalData(wcResult);
       setLastUpdated(new Date());
     } catch (err) {
       console.error(err);
@@ -37,27 +46,62 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchData(activeTab);
-  }, [activeTab]);
+    fetchData();
+  }, []);
 
-  const tabs = [
-    { id: "CF", label: "2026", icon: Wallet, disabled: false },
-  ];
+  const toggleTable = (tableId: string) => {
+    setExpandedTables(prev => ({
+      ...prev,
+      [tableId]: !prev[tableId]
+    }));
+  };
 
   return (
     <main className="flex flex-col h-screen bg-gray-50 overflow-hidden font-['Pretendard']">
       {/* Header Section with Dark Background */}
-      <header className="px-8 py-8 bg-slate-900 shadow-md shrink-0">
+      <header className="px-8 py-6 bg-slate-900 shadow-md shrink-0">
         <div className="max-w-[1800px] mx-auto w-full">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-bold text-white tracking-tight">
               STO 경영실적 대시보드
             </h1>
             
-            <div className="flex items-center gap-4 text-sm text-slate-400">
-              <span className="font-medium">마지막 업데이트: {lastUpdated.toLocaleTimeString()}</span>
+            <div className="flex items-center gap-4">
+              {/* Year Selection */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedYear("2025")}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    selectedYear === "2025"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white/10 text-slate-300 hover:bg-white/20"
+                  }`}
+                >
+                  2025년
+                </button>
+                <button
+                  onClick={() => setSelectedYear("2026")}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    selectedYear === "2026"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white/10 text-slate-300 hover:bg-white/20"
+                  }`}
+                >
+                  2026년
+                </button>
+              </div>
+
+              {/* Monthly Toggle */}
+              <button
+                onClick={() => setShowMonthly(!showMonthly)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                월별 데이터 {showMonthly ? "접기" : "펼치기"}
+              </button>
+
+              {/* Refresh */}
               <button 
-                onClick={() => fetchData(activeTab)}
+                onClick={fetchData}
                 className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-300 hover:text-white"
                 title="데이터 새로고침"
               >
@@ -65,58 +109,87 @@ export default function Home() {
               </button>
             </div>
           </div>
-
-          {/* Navigation Tabs */}
-          <div className="flex flex-wrap gap-2">
-            {tabs.map((tab) => {
-              // Check if this tab is the currently active one
-              const isActive = activeTab === tab.id;
-              const Icon = tab.icon;
-              
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => !tab.disabled && setActiveTab(tab.id as Tab)}
-                  disabled={tab.disabled}
-                  className={`
-                    flex items-center gap-2 px-4 py-3 rounded-lg text-[15px] font-semibold transition-all duration-200
-                    ${isActive 
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-900/30" 
-                      : "text-slate-400 hover:bg-white/5 hover:text-white"
-                    }
-                    ${tab.disabled ? "opacity-50 cursor-not-allowed hover:bg-transparent hover:text-slate-400" : "cursor-pointer"}
-                  `}
-                >
-                  <Icon size={18} strokeWidth={2.5} />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 p-6 bg-gray-100 overflow-hidden">
-        <div className="max-w-[1800px] mx-auto w-full h-full flex flex-col">
-          <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
-                <Loader2 className="animate-spin text-blue-600" size={40} />
-                <p className="font-medium">데이터를 불러오는 중입니다...</p>
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center h-full text-red-500 gap-2">
-                <p className="text-lg font-semibold">오류 발생</p>
-                <p>{error}</p>
-              </div>
-            ) : data ? (
-              <DataTable 
-                headers={data.headers} 
-                rows={data.rows} 
-              />
-            ) : null}
-          </div>
+      <div className="flex-1 p-6 bg-gray-100 overflow-auto">
+        <div className="max-w-[1800px] mx-auto w-full space-y-6">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
+              <Loader2 className="animate-spin text-blue-600" size={40} />
+              <p className="font-medium">데이터를 불러오는 중입니다...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-full text-red-500 gap-2">
+              <p className="text-lg font-semibold">오류 발생</p>
+              <p>{error}</p>
+            </div>
+          ) : (
+            <>
+              {/* Cash Flow Table */}
+              {cashflowData && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => toggleTable("cashflow")}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        {expandedTables.cashflow ? (
+                          <ChevronDown size={20} />
+                        ) : (
+                          <ChevronUp size={20} />
+                        )}
+                      </button>
+                      <h2 className="text-xl font-bold text-gray-900">현금흐름표</h2>
+                      <span className="text-sm text-gray-500">
+                        {expandedTables.cashflow ? "펼치기 ▼" : "접기 ▲"}
+                      </span>
+                    </div>
+                  </div>
+                  {expandedTables.cashflow && (
+                    <DataTable 
+                      headers={cashflowData.headers} 
+                      rows={cashflowData.rows}
+                      showMonthly={showMonthly}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Working Capital Table */}
+              {workingCapitalData && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => toggleTable("workingcapital")}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        {expandedTables.workingcapital ? (
+                          <ChevronDown size={20} />
+                        ) : (
+                          <ChevronUp size={20} />
+                        )}
+                      </button>
+                      <h2 className="text-xl font-bold text-gray-900">운전자본표</h2>
+                      <span className="text-sm text-gray-500">
+                        {expandedTables.workingcapital ? "펼치기 ▼" : "접기 ▲"}
+                      </span>
+                    </div>
+                  </div>
+                  {expandedTables.workingcapital && (
+                    <DataTable 
+                      headers={workingCapitalData.headers} 
+                      rows={workingCapitalData.rows}
+                      showMonthly={showMonthly}
+                    />
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </main>
