@@ -25,13 +25,16 @@ export default function Home() {
     workingcapital: true,
   });
 
-  const fetchData = async () => {
+  const fetchData = async (year: Year) => {
     setLoading(true);
     setError(null);
     try {
+      const cashflowFile = year === "2025" ? "cash2025.csv" : "cashflow.csv";
+      const workingCapitalFile = year === "2025" ? "workingcapital2025.csv" : "workingcapital.csv";
+      
       const [cfResult, wcResult] = await Promise.all([
-        fetchAndParseCsv(`/data/cashflow.csv`),
-        fetchAndParseCsv(`/data/workingcapital.csv`),
+        fetchAndParseCsv(`/data/${cashflowFile}`),
+        fetchAndParseCsv(`/data/${workingCapitalFile}`),
       ]);
       
       setCashflowData(cfResult);
@@ -46,8 +49,8 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(selectedYear);
+  }, [selectedYear]);
 
   const toggleTable = (tableId: string) => {
     setExpandedTables(prev => ({
@@ -101,7 +104,7 @@ export default function Home() {
 
               {/* Refresh */}
               <button 
-                onClick={fetchData}
+                onClick={() => fetchData(selectedYear)}
                 className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-300 hover:text-white"
                 title="데이터 새로고침"
               >
