@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Financial Dashboard
 
-## Getting Started
+This is a financial dashboard built with Next.js, Tailwind CSS, and Papaparse. It visualizes Cash Flow (CF), Profit & Loss (PL), and Balance Sheet (BS) data from CSV files.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **3 Main Tabs**: Cash Flow, Profit & Loss, Balance Sheet.
+- **CSV Driven**: Data is loaded dynamically from CSV files located in the `public/data/` directory.
+- **Excel-like Interface**: Sticky headers and columns for easy viewing of large datasets.
+- **Visual Cues**: Negative numbers are automatically highlighted in red.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## How to Update Data
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To update the dashboard data, simply replace the CSV files in the `public/data` folder:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. `public/data/cf.csv` - For Cash Flow
+2. `public/data/pl.csv` - For Profit & Loss
+3. `public/data/bs.csv` - For Balance Sheet
 
-## Learn More
+**Note:** Ensure the CSV format matches the existing structure (First column as category, subsequent columns as time periods).
 
-To learn more about Next.js, take a look at the following resources:
+## Development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-## Deploy on Vercel
+3. Open [http://localhost:3000](http://localhost:3000) with your browser.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment on Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push this repository to GitHub/GitLab/Bitbucket.
+2. Go to [Vercel](https://vercel.com) and sign up/login.
+3. Click "Add New Project" and import your repository.
+4. Keep the default settings and click "Deploy".
