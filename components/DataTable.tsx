@@ -26,7 +26,8 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
   const [showMonthly, setShowMonthly] = useState(false);
 
   useEffect(() => {
-    setExpandedGroups(prev => prev);
+    // Initialize groups as collapsed (empty object or explicit false)
+    setExpandedGroups({}); 
   }, [rows]);
 
   // Check if this is the Cash Flow table (has "구분" column)
@@ -139,7 +140,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
   const toggleGroup = (id: string) => {
     setExpandedGroups(prev => ({
       ...prev,
-      [id]: !(prev[id] ?? true)
+      [id]: !(prev[id] ?? false) // Toggle logic
     }));
   };
 
@@ -193,7 +194,8 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
           {/* Body */}
           <tbody className="divide-y divide-gray-100">
             {groupedData.map((group) => {
-              const isExpanded = expandedGroups[group.id] ?? true; 
+              // Default to FALSE (Collapsed)
+              const isExpanded = expandedGroups[group.id] ?? false; 
               const hasChildren = group.children.length > 0;
               const visibleData = getVisibleCells(group.data);
 
