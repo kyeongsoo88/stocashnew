@@ -9,13 +9,16 @@ export const fetchAndParseCsv = async (filePath: string): Promise<ParsedData> =>
   const response = await fetch(filePath);
   const arrayBuffer = await response.arrayBuffer();
   
-  // 1. Try decoding as UTF-8 first
-  const decoderUtf8 = new TextDecoder('utf-8');
-  let csv = decoderUtf8.decode(arrayBuffer);
+  let csv = '';
 
-  // 2. Check for replacement characters () which indicate encoding issues
-  // If found, try decoding as EUC-KR (common for Korean Excel CSVs)
-  if (csv.includes('')) {
+  try {
+    // 1. Try decoding as UTF-8 with fatal: true
+    // This will throw an error if the file contains invalid UTF-8 sequences (common in EUC-KR files)
+    const decoderUtf8 = new TextDecoder('utf-8', { fatal: true });
+    csv = decoderUtf8.decode(arrayBuffer);
+  } catch (e) {
+    // 2. If UTF-8 decoding fails, fallback to EUC-KR (Korean Windows standard)
+    console.log(`UTF-8 decoding failed for ${filePath}, falling back to EUC-KR`);
     const decoderEucKr = new TextDecoder('euc-kr');
     csv = decoderEucKr.decode(arrayBuffer);
   }
