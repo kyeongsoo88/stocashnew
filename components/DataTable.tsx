@@ -41,11 +41,15 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title }) =>
       indices.add(0);
     }
 
-    // 2. Hide Monthly columns if toggle is off
+    // 2. Hide Monthly columns (Feb-Nov) if toggle is off
     if (!showMonthly) {
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      // Hide Feb to Nov only
+      const monthsToHide = ["Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
+      
       headers.forEach((header, index) => {
-        if (months.some(m => header.includes(m) && !header.includes("Total"))) {
+        // Check if header exactly matches month name or contains it (e.g. "Feb")
+        // Exclude "Total" columns just in case
+        if (monthsToHide.some(m => header.includes(m) && !header.includes("Total"))) {
           indices.add(index);
         }
       });
