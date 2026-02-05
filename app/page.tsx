@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchAndParseCsv, ParsedData } from "@/utils/csv";
 import { DataTable } from "@/components/DataTable";
+import { DashboardAnalysis } from "@/components/DashboardAnalysis";
 import { 
   Loader2, 
   RefreshCw, 
@@ -120,8 +121,8 @@ export default function Home() {
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 p-6 bg-gray-100 overflow-auto">
-        <div className="max-w-[1800px] mx-auto w-full space-y-6">
+      <div className="flex-1 p-6 bg-gray-100 overflow-hidden">
+        <div className="max-w-[1800px] mx-auto w-full h-full">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
               <Loader2 className="animate-spin text-blue-600" size={40} />
@@ -133,77 +134,87 @@ export default function Home() {
               <p>{error}</p>
             </div>
           ) : (
-            <>
-              {/* Cash Flow Table */}
-              {cashflowData && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                  <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => toggleTable("cashflow")}
-                        className="text-gray-500 hover:text-gray-700"
-                      >
-                        {expandedTables.cashflow ? (
-                          <ChevronDown size={20} />
-                        ) : (
-                          <ChevronUp size={20} />
-                        )}
-                      </button>
-                      <h2 className="text-xl font-bold text-gray-900">현금흐름표</h2>
-                      <button
-                        onClick={() => setExpandAllGroups(prev => ({ ...prev, cashflow: !prev.cashflow }))}
-                        className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                      >
-                        {expandAllGroups.cashflow ? "접기 ▲" : "펼치기 ▼"}
-                      </button>
+            <div className={`grid gap-6 h-full ${!showMonthly ? 'grid-cols-12' : 'grid-cols-1'}`}>
+              {/* Left Column: Tables */}
+              <div className={`${!showMonthly ? 'col-span-7' : 'col-span-12'} overflow-y-auto space-y-6 pr-2 pb-6`}>
+                {/* Cash Flow Table */}
+                {cashflowData && (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => toggleTable("cashflow")}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          {expandedTables.cashflow ? (
+                            <ChevronDown size={20} />
+                          ) : (
+                            <ChevronUp size={20} />
+                          )}
+                        </button>
+                        <h2 className="text-xl font-bold text-gray-900">현금흐름표</h2>
+                        <button
+                          onClick={() => setExpandAllGroups(prev => ({ ...prev, cashflow: !prev.cashflow }))}
+                          className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                        >
+                          {expandAllGroups.cashflow ? "접기 ▲" : "펼치기 ▼"}
+                        </button>
+                      </div>
                     </div>
+                    {expandedTables.cashflow && (
+                      <DataTable 
+                        headers={cashflowData.headers} 
+                        rows={cashflowData.rows}
+                        showMonthly={showMonthly}
+                        expandAll={expandAllGroups.cashflow}
+                      />
+                    )}
                   </div>
-                  {expandedTables.cashflow && (
-                    <DataTable 
-                      headers={cashflowData.headers} 
-                      rows={cashflowData.rows}
-                      showMonthly={showMonthly}
-                      expandAll={expandAllGroups.cashflow}
-                    />
-                  )}
-                </div>
-              )}
+                )}
 
-              {/* Working Capital Table */}
-              {workingCapitalData && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                  <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => toggleTable("workingcapital")}
-                        className="text-gray-500 hover:text-gray-700"
-                      >
-                        {expandedTables.workingcapital ? (
-                          <ChevronDown size={20} />
-                        ) : (
-                          <ChevronUp size={20} />
-                        )}
-                      </button>
-                      <h2 className="text-xl font-bold text-gray-900">운전자본표</h2>
-                      <button
-                        onClick={() => setExpandAllGroups(prev => ({ ...prev, workingcapital: !prev.workingcapital }))}
-                        className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                      >
-                        {expandAllGroups.workingcapital ? "접기 ▲" : "펼치기 ▼"}
-                      </button>
+                {/* Working Capital Table */}
+                {workingCapitalData && (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => toggleTable("workingcapital")}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          {expandedTables.workingcapital ? (
+                            <ChevronDown size={20} />
+                          ) : (
+                            <ChevronUp size={20} />
+                          )}
+                        </button>
+                        <h2 className="text-xl font-bold text-gray-900">운전자본표</h2>
+                        <button
+                          onClick={() => setExpandAllGroups(prev => ({ ...prev, workingcapital: !prev.workingcapital }))}
+                          className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                        >
+                          {expandAllGroups.workingcapital ? "접기 ▲" : "펼치기 ▼"}
+                        </button>
+                      </div>
                     </div>
+                    {expandedTables.workingcapital && (
+                      <DataTable 
+                        headers={workingCapitalData.headers} 
+                        rows={workingCapitalData.rows}
+                        showMonthly={showMonthly}
+                        expandAll={expandAllGroups.workingcapital}
+                      />
+                    )}
                   </div>
-                  {expandedTables.workingcapital && (
-                    <DataTable 
-                      headers={workingCapitalData.headers} 
-                      rows={workingCapitalData.rows}
-                      showMonthly={showMonthly}
-                      expandAll={expandAllGroups.workingcapital}
-                    />
-                  )}
+                )}
+              </div>
+
+              {/* Right Column: Analysis (only when !showMonthly) */}
+              {!showMonthly && (
+                <div className="col-span-5 h-full overflow-hidden pb-6">
+                  <DashboardAnalysis />
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
