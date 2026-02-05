@@ -24,6 +24,10 @@ export default function Home() {
     cashflow: true,
     workingcapital: true,
   });
+  const [expandAllGroups, setExpandAllGroups] = useState<Record<string, boolean>>({
+    cashflow: false,
+    workingcapital: false,
+  });
 
   const fetchData = async (year: Year) => {
     setLoading(true);
@@ -146,9 +150,12 @@ export default function Home() {
                         )}
                       </button>
                       <h2 className="text-xl font-bold text-gray-900">현금흐름표</h2>
-                      <span className="text-sm text-gray-500">
-                        {expandedTables.cashflow ? "펼치기 ▼" : "접기 ▲"}
-                      </span>
+                      <button
+                        onClick={() => setExpandAllGroups(prev => ({ ...prev, cashflow: !prev.cashflow }))}
+                        className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                      >
+                        {expandAllGroups.cashflow ? "접기 ▲" : "펼치기 ▼"}
+                      </button>
                     </div>
                   </div>
                   {expandedTables.cashflow && (
@@ -156,6 +163,7 @@ export default function Home() {
                       headers={cashflowData.headers} 
                       rows={cashflowData.rows}
                       showMonthly={showMonthly}
+                      expandAll={expandAllGroups.cashflow}
                     />
                   )}
                 </div>
@@ -177,9 +185,12 @@ export default function Home() {
                         )}
                       </button>
                       <h2 className="text-xl font-bold text-gray-900">운전자본표</h2>
-                      <span className="text-sm text-gray-500">
-                        {expandedTables.workingcapital ? "펼치기 ▼" : "접기 ▲"}
-                      </span>
+                      <button
+                        onClick={() => setExpandAllGroups(prev => ({ ...prev, workingcapital: !prev.workingcapital }))}
+                        className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                      >
+                        {expandAllGroups.workingcapital ? "접기 ▲" : "펼치기 ▼"}
+                      </button>
                     </div>
                   </div>
                   {expandedTables.workingcapital && (
@@ -187,6 +198,7 @@ export default function Home() {
                       headers={workingCapitalData.headers} 
                       rows={workingCapitalData.rows}
                       showMonthly={showMonthly}
+                      expandAll={expandAllGroups.workingcapital}
                     />
                   )}
                 </div>

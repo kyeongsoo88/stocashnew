@@ -12,6 +12,8 @@ interface DataTableProps {
   rows: string[][];
   title?: string;
   showMonthly?: boolean;
+  expandAll?: boolean;
+  onExpandAllChange?: (expanded: boolean) => void;
 }
 
 interface GroupedRow {
@@ -21,12 +23,8 @@ interface GroupedRow {
   isHeader: boolean;
 }
 
-export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, showMonthly = false }) => {
+export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, showMonthly = false, expandAll = false, onExpandAllChange }) => {
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    setExpandedGroups({}); 
-  }, [rows]);
 
   // Determine which columns to hide (Feb-Nov if showMonthly is false)
   const hiddenColumnIndices = useMemo(() => {
@@ -98,6 +96,17 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
 
     return groups;
   }, [rows]);
+
+  // When expandAll prop changes, expand/collapse all groups
+  useEffect(() => {
+    const newExpandedGroups: Record<string, boolean> = {};
+    groupedData.forEach((group) => {
+      if (group.children.length > 0) {
+        newExpandedGroups[group.id] = expandAll;
+      }
+    });
+    setExpandedGroups(newExpandedGroups);
+  }, [expandAll, groupedData]);
 
   const toggleGroup = (id: string) => {
     setExpandedGroups(prev => ({
