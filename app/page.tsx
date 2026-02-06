@@ -11,10 +11,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 
-type Year = "2025" | "2026";
-
 export default function Home() {
-  const [selectedYear, setSelectedYear] = useState<Year>("2026");
   const [cashflowData, setCashflowData] = useState<ParsedData | null>(null);
   const [workingCapitalData, setWorkingCapitalData] = useState<ParsedData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,16 +27,13 @@ export default function Home() {
     workingcapital: false,
   });
 
-  const fetchData = async (year: Year) => {
+  const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const cashflowFile = year === "2025" ? "cash2025.csv" : "cashflow.csv";
-      const workingCapitalFile = year === "2025" ? "workingcapital2025.csv" : "workingcapital.csv";
-      
       const [cfResult, wcResult] = await Promise.all([
-        fetchAndParseCsv(`/data/${cashflowFile}`),
-        fetchAndParseCsv(`/data/${workingCapitalFile}`),
+        fetchAndParseCsv(`/data/cashflow.csv`),
+        fetchAndParseCsv(`/data/workingcapital.csv`),
       ]);
       
       setCashflowData(cfResult);
@@ -54,8 +48,8 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchData(selectedYear);
-  }, [selectedYear]);
+    fetchData();
+  }, []);
 
   const toggleTable = (tableId: string) => {
     setExpandedTables(prev => ({
@@ -75,30 +69,6 @@ export default function Home() {
             </h1>
             
             <div className="flex items-center gap-4">
-              {/* Year Selection */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setSelectedYear("2025")}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    selectedYear === "2025"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white/10 text-slate-300 hover:bg-white/20"
-                  }`}
-                >
-                  2025년
-                </button>
-                <button
-                  onClick={() => setSelectedYear("2026")}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    selectedYear === "2026"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white/10 text-slate-300 hover:bg-white/20"
-                  }`}
-                >
-                  2026년
-                </button>
-              </div>
-
               {/* Monthly Toggle */}
               <button
                 onClick={() => setShowMonthly(!showMonthly)}
@@ -109,7 +79,7 @@ export default function Home() {
 
               {/* Refresh */}
               <button 
-                onClick={() => fetchData(selectedYear)}
+                onClick={() => fetchData()}
                 className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-300 hover:text-white"
                 title="데이터 새로고침"
               >
@@ -134,9 +104,9 @@ export default function Home() {
               <p>{error}</p>
             </div>
           ) : (
-            <div className={`grid gap-6 h-full ${!showMonthly && selectedYear === "2026" ? 'grid-cols-12' : 'grid-cols-1'}`}>
+            <div className={`grid gap-6 h-full ${!showMonthly ? 'grid-cols-12' : 'grid-cols-1'}`}>
               {/* Left Column: Tables */}
-              <div className={`${!showMonthly && selectedYear === "2026" ? 'col-span-7' : 'col-span-12'} overflow-y-auto space-y-6 pr-2 pb-6`}>
+              <div className={`${!showMonthly ? 'col-span-7' : 'col-span-12'} overflow-y-auto space-y-6 pr-2 pb-6`}>
                 {/* Cash Flow Table */}
                 {cashflowData && (
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -208,8 +178,8 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Right Column: Analysis (only when !showMonthly AND selectedYear is 2026) */}
-              {!showMonthly && selectedYear === "2026" && (
+              {/* Right Column: Analysis (only when !showMonthly) */}
+              {!showMonthly && (
                 <div className="col-span-5 h-full overflow-hidden pb-6">
                   <DashboardAnalysis />
                 </div>
