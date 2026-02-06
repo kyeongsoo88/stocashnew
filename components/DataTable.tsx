@@ -183,7 +183,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                       group.isHeader && (group.data[0]?.includes("기초잔액") || group.data[0]?.includes("기말잔액")) 
                         ? "font-bold text-gray-900 bg-blue-50" 
                         : group.isHeader && group.data[0]?.includes("투자활동")
-                        ? "font-bold text-gray-900 bg-green-50"
+                        ? "font-bold text-gray-900 bg-white"
                         : group.isHeader 
                         ? "font-bold text-gray-900 bg-gray-50" 
                         : "font-medium text-gray-900"
@@ -204,16 +204,16 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                             // First Column
                             cellIndex === 0 && "sticky left-0 z-10 text-left flex items-center gap-2 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
                             cellIndex === 0 && isBeginningOrEnding && "bg-blue-50 group-hover:bg-blue-100",
-                            cellIndex === 0 && isInvesting && "bg-green-50 group-hover:bg-green-100",
+                            cellIndex === 0 && isInvesting && "bg-white group-hover:bg-gray-50",
                             cellIndex === 0 && !isBeginningOrEnding && !isInvesting && "bg-white group-hover:bg-gray-50",
                             // Middle Columns
                             cellIndex !== 0 && !isLast && "text-right",
                             cellIndex !== 0 && !isLast && isBeginningOrEnding && "bg-blue-50",
-                            cellIndex !== 0 && !isLast && isInvesting && "bg-green-50",
+                            cellIndex !== 0 && !isLast && isInvesting && "bg-white",
                             // Last Column (YoY)
                             isLast && "text-right font-bold",
                             isLast && isBeginningOrEnding && "bg-blue-50 group-hover:bg-blue-100",
-                            isLast && isInvesting && "bg-green-50 group-hover:bg-green-100",
+                            isLast && isInvesting && "bg-white group-hover:bg-gray-100",
                             isLast && !isBeginningOrEnding && !isInvesting && "bg-gray-50 group-hover:bg-gray-100",
                             // Negative numbers
                             negative && "text-red-600"
@@ -238,10 +238,15 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                   {hasChildren && isExpanded && group.children.map((childRow, childIndex) => {
                     const visibleChildData = getVisibleCells(childRow);
                     const isBorrowingRow = childRow[0]?.includes("차입금의 변동(본사 차입금)");
+                    const isSTEDividend = childRow[0]?.includes("STE 배당금");
+                    const isHighlighted = isBorrowingRow || isSTEDividend;
                     return (
                       <tr 
                         key={`${group.id}-child-${childIndex}`}
-                        className="hover:bg-gray-50/80 transition-colors"
+                        className={cn(
+                          "transition-colors",
+                          isHighlighted ? "bg-yellow-50 hover:bg-yellow-100" : "hover:bg-gray-50/80"
+                        )}
                       >
                         {visibleChildData.map((cell, cellIndex) => {
                           const isLast = cellIndex === visibleChildData.length - 1;
@@ -254,13 +259,18 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                               className={cn(
                                 "px-4 py-2 border-b border-gray-100 whitespace-nowrap text-gray-800",
                                 // Indentation
-                                cellIndex === 0 && "sticky left-0 z-10 text-left pl-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
+                                cellIndex === 0 && "sticky left-0 z-10 text-left pl-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
+                                cellIndex === 0 && isHighlighted && "bg-yellow-50",
+                                cellIndex === 0 && !isHighlighted && "bg-white",
                                 // Middle Columns
                                 cellIndex !== 0 && !isLast && "text-right font-normal",
+                                cellIndex !== 0 && !isLast && isHighlighted && "bg-yellow-50",
                                 // Last Column (YoY)
-                                isLast && "text-right bg-gray-50 font-medium text-gray-900",
-                                // Negative numbers (차입금의 변동(본사 차입금)은 제외)
-                                negative && !isBorrowingRow && "text-red-600"
+                                isLast && "text-right font-medium text-gray-900",
+                                isLast && isHighlighted && "bg-yellow-50",
+                                isLast && !isHighlighted && "bg-gray-50",
+                                // Negative numbers (첫 번째 열 제외하고 음수는 빨간색)
+                                negative && cellIndex !== 0 && "text-red-600"
                               )}
                             >
                                {cellValue}

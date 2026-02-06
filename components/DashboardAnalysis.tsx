@@ -16,6 +16,12 @@ export const DashboardAnalysis = () => {
           </div>
           
           <ul className="space-y-3 text-sm text-slate-700 leading-relaxed">
+            <li className="flex gap-2 bg-yellow-50 p-3 rounded-md">
+              <span className="text-blue-500 font-bold">✓</span>
+              <span>
+                STE배당금 2026년 11월 수취 예정, 2026년 12월 본사 차입금 상환 예정 (현재 영국 정부의 STE감자 승인 절차 진행중으로, 감자 승인 완료될시 ASAP 배당 후 본사 차입금 상환 예정)
+              </span>
+            </li>
             <li className="flex gap-2">
               <span className="text-blue-500 font-bold">✓</span>
               <span>
