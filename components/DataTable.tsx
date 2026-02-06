@@ -304,8 +304,8 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                         key={`${group.id}-child-${childIndex}`}
                 className={cn(
                           "transition-colors",
-                          // 기타(본사차입, STE 배당등), 기타(차입상환, STE지분매입)은 검정색
-                          isOtherItem && "text-gray-900",
+                          // 기타(본사차입, STE 배당등), 기타(차입상환, STE지분매입), 매출수금 자식 항목은 검정색
+                          (isOtherItem || isSalesCollectionChild) && "!text-gray-900",
                           isHighlighted ? "bg-yellow-50 hover:bg-yellow-100" : "hover:bg-gray-50/80"
                         )}
                       >
@@ -329,15 +329,17 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                                 cellIndex === 0 && "sticky left-0 z-10 text-left pl-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
                                 cellIndex === 0 && isHighlighted && "bg-yellow-50",
                                 cellIndex === 0 && !isHighlighted && "bg-white",
-                                // Middle Columns
-                                cellIndex !== 0 && !isLast && "text-right font-normal",
+                                // Middle Columns - 매출수금 자식 항목은 검정색 (음수 제외)
+                                cellIndex !== 0 && !isLast && isSalesCollectionChild && !negative && "!text-gray-900 text-right font-normal",
+                                cellIndex !== 0 && !isLast && !isSalesCollectionChild && "text-right font-normal",
                                 cellIndex !== 0 && !isLast && isHighlighted && "bg-yellow-50",
-                                // Last Column (YoY)
-                                isLast && "text-right font-medium text-gray-900",
+                                // Last Column (YoY) - 매출수금 자식 항목은 검정색 (음수 제외)
+                                isLast && isSalesCollectionChild && !negative && "!text-gray-900 text-right font-medium",
+                                isLast && !isSalesCollectionChild && "text-right font-medium text-gray-900",
                                 isLast && isHighlighted && "bg-yellow-50",
                                 isLast && !isHighlighted && "bg-gray-50",
                                 // Negative numbers (첫 번째 열 제외하고 음수는 빨간색)
-                                negative && cellIndex !== 0 && "text-red-600"
+                                negative && cellIndex !== 0 && "!text-red-600"
                               )}
                             >
                                {cellValue}
