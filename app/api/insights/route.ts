@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { redis, defaultInsights, INSIGHTS_KEY } from '@/lib/upstash';
+import { redis, defaultInsights, INSIGHTS_KEY, isRedisAvailable } from '@/lib/upstash';
 
 // GET: 인사이트 데이터 가져오기
 export async function GET() {
   try {
+    // Redis가 사용 가능한지 확인
+    if (!isRedisAvailable() || !redis) {
+      console.log('Redis not available, using localStorage fallback');
+      return NextResponse.json({ 
+        insights: defaultInsights,
+        useLocalStorage: true,
+        message: 'Upstash Redis not configured. Data will be stored in browser only.'
+      });
+    }
+    
     // Upstash KV에서 데이터 가져오기
     const insights = await redis.get<string[]>(INSIGHTS_KEY);
     
@@ -16,7 +26,11 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching insights:', error);
     // 에러 시 기본값 반환
-    return NextResponse.json({ insights: defaultInsights });
+    return NextResponse.json({ 
+      insights: defaultInsights,
+      useLocalStorage: true,
+      error: String(error)
+    });
   }
 }
 
@@ -33,6 +47,17 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Redis가 사용 가능한지 확인
+    if (!isRedisAvailable() || !redis) {
+      console.log('Redis not available, returning localStorage flag');
+      return NextResponse.json({ 
+        success: true, 
+        insights,
+        useLocalStorage: true,
+        message: 'Saved to browser only. Set up Upstash Redis for persistent storage.'
+      });
+    }
+    
     // Upstash KV에 저장
     await redis.set(INSIGHTS_KEY, insights);
     
@@ -40,9 +65,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error updating insights:', error);
     return NextResponse.json(
-      { error: 'Failed to update insights' },
+      { 
+        error: 'Failed to update insights',
+        details: String(error),
+        useLocalStorage: true
+      },
       { status: 500 }
     );
   }
 }
-

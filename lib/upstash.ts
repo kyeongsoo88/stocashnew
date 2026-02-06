@@ -1,10 +1,27 @@
 import { Redis } from '@upstash/redis';
 
 // Upstash Redis 클라이언트 초기화
-export const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-});
+let redis: Redis | null = null;
+
+try {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  
+  if (url && token) {
+    redis = new Redis({ url, token });
+  }
+} catch (error) {
+  console.error('Failed to initialize Upstash Redis:', error);
+}
+
+export { redis };
+
+// Redis가 연결되어 있는지 확인
+export const isRedisAvailable = () => {
+  return redis !== null && 
+         process.env.UPSTASH_REDIS_REST_URL && 
+         process.env.UPSTASH_REDIS_REST_TOKEN;
+};
 
 // 기본 인사이트 데이터
 export const defaultInsights = [

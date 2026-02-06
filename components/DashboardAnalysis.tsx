@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Edit2, Save, X, RefreshCw, Plus } from 'lucide-react';
+import { Edit2, Save, X, RefreshCw, Plus, AlertCircle } from 'lucide-react';
 
 interface ChangeItem {
   title: string;
@@ -18,10 +18,17 @@ export const DashboardAnalysis = () => {
   const [editedChanges, setEditedChanges] = useState<ChangeItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [useLocalStorage, setUseLocalStorage] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+
+  // localStorage 키
+  const STORAGE_INSIGHTS_KEY = 'dashboard_insights';
+  const STORAGE_CHANGES_KEY = 'dashboard_changes';
 
   // 데이터 불러오기
   const fetchData = async () => {
     setLoading(true);
+    setErrorMessage('');
     try {
       const [insightsRes, changesRes] = await Promise.all([
         fetch('/api/insights'),
@@ -31,12 +38,30 @@ export const DashboardAnalysis = () => {
       const insightsData = await insightsRes.json();
       const changesData = await changesRes.json();
       
-      setInsights(insightsData.insights || []);
-      setEditedInsights(insightsData.insights || []);
-      setChanges(changesData.changes || []);
-      setEditedChanges(changesData.changes || []);
+      // localStorage 사용 여부 확인
+      if (insightsData.useLocalStorage || changesData.useLocalStorage) {
+        setUseLocalStorage(true);
+        
+        // localStorage에서 데이터 로드
+        const storedInsights = localStorage.getItem(STORAGE_INSIGHTS_KEY);
+        const storedChanges = localStorage.getItem(STORAGE_CHANGES_KEY);
+        
+        const finalInsights = storedInsights ? JSON.parse(storedInsights) : insightsData.insights;
+        const finalChanges = storedChanges ? JSON.parse(storedChanges) : changesData.changes;
+        
+        setInsights(finalInsights);
+        setEditedInsights(finalInsights);
+        setChanges(finalChanges);
+        setEditedChanges(finalChanges);
+      } else {
+        setInsights(insightsData.insights || []);
+        setEditedInsights(insightsData.insights || []);
+        setChanges(changesData.changes || []);
+        setEditedChanges(changesData.changes || []);
+      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
+      setErrorMessage('데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -49,6 +74,7 @@ export const DashboardAnalysis = () => {
   // 인사이트 저장
   const handleSaveInsights = async () => {
     setSaving(true);
+    setErrorMessage('');
     try {
       const response = await fetch('/api/insights', {
         method: 'POST',
@@ -56,16 +82,27 @@ export const DashboardAnalysis = () => {
         body: JSON.stringify({ insights: editedInsights }),
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
-        const data = await response.json();
         setInsights(data.insights);
         setIsEditingInsights(false);
+        
+        // localStorage에도 저장
+        if (data.useLocalStorage) {
+          localStorage.setItem(STORAGE_INSIGHTS_KEY, JSON.stringify(data.insights));
+          alert('✅ 브라우저에 저장되었습니다.\n\n⚠️ Upstash Redis가 설정되지 않아 이 브라우저에만 저장됩니다.\n다른 사용자와 공유하려면 Vercel에서 Upstash를 연결하세요.');
+        } else {
+          alert('✅ 저장되었습니다!');
+        }
       } else {
-        alert('저장에 실패했습니다.');
+        setErrorMessage(data.error || '저장에 실패했습니다.');
+        alert(`❌ 저장 실패: ${data.error || '알 수 없는 오류'}\n\n${data.details || ''}`);
       }
     } catch (error) {
       console.error('Failed to save insights:', error);
-      alert('저장 중 오류가 발생했습니다.');
+      setErrorMessage('저장 중 오류가 발생했습니다.');
+      alert(`❌ 저장 중 오류: ${error}`);
     } finally {
       setSaving(false);
     }
@@ -74,6 +111,7 @@ export const DashboardAnalysis = () => {
   // 주요 변동 내역 저장
   const handleSaveChanges = async () => {
     setSaving(true);
+    setErrorMessage('');
     try {
       const response = await fetch('/api/changes', {
         method: 'POST',
@@ -81,16 +119,27 @@ export const DashboardAnalysis = () => {
         body: JSON.stringify({ changes: editedChanges }),
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
-        const data = await response.json();
         setChanges(data.changes);
         setIsEditingChanges(false);
+        
+        // localStorage에도 저장
+        if (data.useLocalStorage) {
+          localStorage.setItem(STORAGE_CHANGES_KEY, JSON.stringify(data.changes));
+          alert('✅ 브라우저에 저장되었습니다.\n\n⚠️ Upstash Redis가 설정되지 않아 이 브라우저에만 저장됩니다.\n다른 사용자와 공유하려면 Vercel에서 Upstash를 연결하세요.');
+        } else {
+          alert('✅ 저장되었습니다!');
+        }
       } else {
-        alert('저장에 실패했습니다.');
+        setErrorMessage(data.error || '저장에 실패했습니다.');
+        alert(`❌ 저장 실패: ${data.error || '알 수 없는 오류'}\n\n${data.details || ''}`);
       }
     } catch (error) {
       console.error('Failed to save changes:', error);
-      alert('저장 중 오류가 발생했습니다.');
+      setErrorMessage('저장 중 오류가 발생했습니다.');
+      alert(`❌ 저장 중 오류: ${error}`);
     } finally {
       setSaving(false);
     }
@@ -123,7 +172,15 @@ export const DashboardAnalysis = () => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full overflow-hidden flex flex-col">
       <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">2026년 현금흐름 분석</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold text-gray-900">2026년 현금흐름 분석</h2>
+          {useLocalStorage && (
+            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full flex items-center gap-1" title="Upstash Redis 미연결">
+              <AlertCircle size={12} />
+              로컬 저장
+            </span>
+          )}
+        </div>
         <button
           onClick={fetchData}
           disabled={loading}
@@ -133,6 +190,13 @@ export const DashboardAnalysis = () => {
           <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
         </button>
       </div>
+      
+      {errorMessage && (
+        <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-start gap-2">
+          <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
       
       <div className="p-6 space-y-6 overflow-y-auto flex-1">
         {/* Card 1: Key Insights */}
