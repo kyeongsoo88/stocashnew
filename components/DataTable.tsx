@@ -297,6 +297,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                     const isSTEDividend = childRow[0]?.includes("STE 배당금");
                     const isOtherItem = childRow[0]?.includes("기타(본사차입") || childRow[0]?.includes("기타(차입상환") || childRow[0]?.includes("기타(25년 STE지분매입");
                     const isOtherRepayment = childRow[0]?.includes("기타(차입상환") || childRow[0]?.includes("기타(25년 STE지분매입");
+                    const isSalesCollectionChild = childRow[0]?.includes("온라인(US+EU)") || childRow[0]?.includes("홀세일") || childRow[0]?.includes("라이선스");
                     const isHighlighted = isBorrowingRow || isSTEDividend;
                     return (
                       <tr 
@@ -318,9 +319,9 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                       key={cellIndex}
                       className={cn(
                                 "px-4 py-2 border-b border-gray-100 whitespace-nowrap",
-                                // First column text color - 기타(본사차입, STE 배당등), 기타(차입상환, STE지분매입)은 검정색 (빨간색 오버라이드)
-                                cellIndex === 0 && isOtherItem && "!text-gray-900",
-                                cellIndex === 0 && !isOtherItem && "text-gray-800",
+                                // First column text color - 기타(본사차입, STE 배당등), 기타(차입상환, STE지분매입), 매출수금 자식 항목은 검정색
+                                cellIndex === 0 && (isOtherItem || isSalesCollectionChild) && "!text-gray-900",
+                                cellIndex === 0 && !isOtherItem && !isSalesCollectionChild && "text-gray-800",
                                 // 기타(차입상환, STE지분매입), 기타(25년 STE지분매입, 26년 본사차입 상환)은 볼드체, 기타비용은 볼드체 해제
                                 cellIndex === 0 && isOtherRepayment && "font-bold",
                                 cellIndex === 0 && !isOtherRepayment && "font-normal",
