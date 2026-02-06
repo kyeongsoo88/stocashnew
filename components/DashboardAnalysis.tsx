@@ -240,10 +240,10 @@ export const DashboardAnalysis = () => {
               <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-900">
                 <div className="font-bold mb-1">⚠️ Upstash가 설정되지 않았습니다</div>
                 <div className="text-xs space-y-1">
-                  <div>1. Vercel > Settings > Environment Variables 확인</div>
+                  <div>1. Vercel &gt; Settings &gt; Environment Variables 확인</div>
                   <div>2. UPSTASH_REDIS_REST_URL 확인</div>
                   <div>3. UPSTASH_REDIS_REST_TOKEN 확인</div>
-                  <div>4. Deployments > 최신 배포 > Redeploy</div>
+                  <div>4. Deployments &gt; 최신 배포 &gt; Redeploy</div>
                 </div>
               </div>
             )}
