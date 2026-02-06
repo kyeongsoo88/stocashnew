@@ -4,8 +4,10 @@ import { Redis } from '@upstash/redis';
 let redis: Redis | null = null;
 
 try {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Vercel KV는 KV_REST_API_URL과 KV_REST_API_TOKEN을 사용
+  // Upstash 직접 연결은 UPSTASH_REDIS_REST_URL과 UPSTASH_REDIS_REST_TOKEN 사용
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   
   if (url && token) {
     redis = new Redis({ url, token });
@@ -19,8 +21,10 @@ export { redis };
 // Redis가 연결되어 있는지 확인
 export const isRedisAvailable = () => {
   return redis !== null && 
-         process.env.UPSTASH_REDIS_REST_URL && 
-         process.env.UPSTASH_REDIS_REST_TOKEN;
+         (
+           (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
+           (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+         );
 };
 
 // 기본 인사이트 데이터
