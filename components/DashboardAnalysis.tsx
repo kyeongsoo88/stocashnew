@@ -19,7 +19,7 @@ export const DashboardAnalysis = () => {
             <li className="flex gap-2 bg-yellow-50 p-3 rounded-md">
               <span className="text-blue-500 font-bold">✓</span>
               <span>
-                STE배당금 2026년 11월 수취 예정, 2026년 12월 본사 차입금 상환 예정 (현재 영국 정부의 STE감자 승인 절차 진행중으로, 감자 승인 완료될시 ASAP 배당 후 본사 차입금 상환 예정)
+                STE배당금 2026년 11월 수취 예정, 2026년 12월 본사 차입금 상환 예정 (현재 영국 정부의 STE감자 승인 절차 진행중으로, 감자 승인 완료될시 즉시 배당 후 본사 차입금 상환 예정)
               </span>
             </li>
             <li className="flex gap-2">
@@ -86,10 +86,18 @@ export const DashboardAnalysis = () => {
             </div>
 
             <div>
-              <div className="font-bold text-slate-800 mb-1">차입금의 변동</div>
+              <div className="font-bold text-slate-800 mb-1">STE 배당금</div>
               <div className="text-sm text-slate-600">
-                연간 0 <span className="text-red-500 font-medium">(전년 +28,715 대비 -28,715)</span>
-                <p className="text-xs text-slate-500 mt-1">추가 차입 없는 경영 기조 유지</p>
+                연간 18,000 <span className="text-blue-600 font-medium">(2026년 11월 및 12월 수취)</span>
+                <p className="text-xs text-slate-500 mt-1">STE 감자 승인 후 배당금 수취</p>
+              </div>
+            </div>
+
+            <div>
+              <div className="font-bold text-slate-800 mb-1">차입금의 변동(본사 차입금)</div>
+              <div className="text-sm text-slate-600">
+                연간 -46,715
+                <p className="text-xs text-slate-500 mt-1">26년 12월 F&F(OC) 차입금 18,000 상환예정</p>
               </div>
             </div>
           </div>
