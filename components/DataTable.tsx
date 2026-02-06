@@ -102,7 +102,9 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
     const newExpandedGroups: Record<string, boolean> = {};
     groupedData.forEach((group) => {
       if (group.children.length > 0) {
-        newExpandedGroups[group.id] = expandAll;
+        // 재무활동은 기본적으로 열려있도록 설정
+        const isFinancialActivity = group.data[0]?.includes("재무활동");
+        newExpandedGroups[group.id] = isFinancialActivity ? true : expandAll;
       }
     });
     setExpandedGroups(newExpandedGroups);
@@ -235,6 +237,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                   {/* Children Rows */}
                   {hasChildren && isExpanded && group.children.map((childRow, childIndex) => {
                     const visibleChildData = getVisibleCells(childRow);
+                    const isBorrowingRow = childRow[0]?.includes("차입금의 변동(본사 차입금)");
                     return (
                       <tr 
                         key={`${group.id}-child-${childIndex}`}
@@ -256,8 +259,8 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                                 cellIndex !== 0 && !isLast && "text-right font-normal",
                                 // Last Column (YoY)
                                 isLast && "text-right bg-gray-50 font-medium text-gray-900",
-                                // Negative numbers
-                                negative && "text-red-600"
+                                // Negative numbers (차입금의 변동(본사 차입금)은 제외)
+                                negative && !isBorrowingRow && "text-red-600"
                               )}
                             >
                                {cellValue}

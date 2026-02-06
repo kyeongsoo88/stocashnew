@@ -71,7 +71,7 @@ export default function Home() {
         <div className="max-w-[1800px] mx-auto w-full">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-bold text-white tracking-tight">
-              STO 경영실적 대시보드
+              STO 현금흐름표
             </h1>
             
             <div className="flex items-center gap-4">

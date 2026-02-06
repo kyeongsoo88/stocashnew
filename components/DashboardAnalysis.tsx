@@ -4,7 +4,7 @@ export const DashboardAnalysis = () => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full overflow-hidden flex flex-col">
       <div className="p-4 border-b border-gray-200 bg-white">
-        <h2 className="text-xl font-bold text-gray-900">2026년 경영실적 분석</h2>
+        <h2 className="text-xl font-bold text-gray-900">2026년 현금흐름 분석</h2>
       </div>
       
       <div className="p-6 space-y-6 overflow-y-auto flex-1">
