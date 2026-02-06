@@ -1,10 +1,156 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { Edit2, Save, X, RefreshCw } from 'lucide-react';
+
+interface Insight {
+  text: string;
+  isHighlighted?: boolean;
+}
 
 export const DashboardAnalysis = () => {
+  const [insights, setInsights] = useState<string[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedInsights, setEditedInsights] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // 인사이트 데이터 불러오기
+  const fetchInsights = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/insights');
+      const data = await response.json();
+      setInsights(data.insights || []);
+      setEditedInsights(data.insights || []);
+    } catch (error) {
+      console.error('Failed to fetch insights:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 데이터 불러오기
+  useEffect(() => {
+    fetchInsights();
+  }, []);
+
+  // 인사이트 저장
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch('/api/insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ insights: editedInsights }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setInsights(data.insights);
+        setIsEditing(false);
+      } else {
+        alert('저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Failed to save insights:', error);
+      alert('저장 중 오류가 발생했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // 편집 취소
+  const handleCancel = () => {
+    setEditedInsights(insights);
+    setIsEditing(false);
+  };
+
+  // 인사이트 항목 업데이트
+  const updateInsight = (index: number, value: string) => {
+    const newInsights = [...editedInsights];
+    newInsights[index] = value;
+    setEditedInsights(newInsights);
+  };
+
+  // 인사이트 항목 추가
+  const addInsight = () => {
+    setEditedInsights([...editedInsights, '']);
+  };
+
+  // 인사이트 항목 삭제
+  const removeInsight = (index: number) => {
+    const newInsights = editedInsights.filter((_, i) => i !== index);
+    setEditedInsights(newInsights);
+  };
+
+  // 마크다운 스타일 텍스트 렌더링
+  const renderText = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        const content = part.slice(2, -2);
+        const isNegative = content.startsWith('-');
+        const isPositive = content.startsWith('+');
+        
+        return (
+          <span
+            key={i}
+            className={`font-bold ${
+              isNegative ? 'text-red-600' : isPositive ? 'text-blue-600' : 'text-slate-900'
+            }`}
+          >
+            {content}
+          </span>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full overflow-hidden flex flex-col">
-      <div className="p-4 border-b border-gray-200 bg-white">
+      <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900">2026년 현금흐름 분석</h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchInsights}
+            disabled={loading}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+            title="새로고침"
+          >
+            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+          </button>
+          {!isEditing ? (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            >
+              <Edit2 size={16} />
+              편집
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={handleCancel}
+                className="flex items-center gap-2 px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+              >
+                <X size={16} />
+                취소
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
+              >
+                <Save size={16} />
+                {saving ? '저장중...' : '저장'}
+              </button>
+            </>
+          )}
+        </div>
       </div>
       
       <div className="p-6 space-y-6 overflow-y-auto flex-1">
@@ -15,44 +161,47 @@ export const DashboardAnalysis = () => {
             <h3 className="font-bold text-lg text-slate-800">핵심 인사이트</h3>
           </div>
           
-          <ul className="space-y-3 text-sm text-slate-700 leading-relaxed">
-            <li className="flex gap-2 bg-yellow-50 p-3 rounded-md">
-              <span className="text-blue-500 font-bold">✓</span>
-              <span>
-                STE배당금 2026년 11월 수취 예정, 2026년 12월 본사 차입금 상환 예정 (현재 영국 정부의 STE감자 승인 절차 진행중으로, 감자 승인 완료될시 즉시 배당 후 본사 차입금 상환 예정)
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-blue-500 font-bold">✓</span>
-              <span>
-                영업활동 현금흐름은 <span className="font-bold text-red-600">-30</span>으로 여전히 음수이나, 전년(<span className="text-slate-500">-5,265</span>) 대비 <span className="font-bold text-blue-600">+5,236</span> 대폭 개선됨. 적자 폭이 크게 축소되며 현금흐름 건전성 회복 신호.
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-blue-500 font-bold">✓</span>
-              <span>
-                당기순이익은 <span className="font-bold text-red-600">-1,814</span>이나 전년 대비 <span className="font-bold text-blue-600">+6,245</span> 증가하여 수익성 지표가 뚜렷하게 개선되는 추세.
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-blue-500 font-bold">✓</span>
-              <span>
-                투자활동 지출은 2026년 0으로 최소화됨. 전년도 대규모 지출(-19,159) 이후 숨 고르기 단계로, 현금 유출 통제 중.
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-blue-500 font-bold">✓</span>
-              <span>
-                재무활동은 <span className="font-bold text-slate-900">-276</span>으로 전환(전년 +28,422). 대규모 차입 없이 리스부채 상환 등 필수적인 재무 지출만 발생하며 부채 의존도 낮춤.
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-blue-500 font-bold">✓</span>
-              <span>
-                기말잔액은 <span className="font-bold text-blue-600">7,257</span>로 안정적인 수준 유지(전년 7,563 대비 소폭 감소). 영업 적자 축소와 투자/재무 지출 최소화 전략이 유효하게 작동 중.
-              </span>
-            </li>
-          </ul>
+          {loading ? (
+            <div className="text-center py-4 text-gray-500">로딩 중...</div>
+          ) : isEditing ? (
+            <div className="space-y-3">
+              {editedInsights.map((insight, index) => (
+                <div key={index} className="flex gap-2">
+                  <textarea
+                    value={insight}
+                    onChange={(e) => updateInsight(index, e.target.value)}
+                    className="flex-1 p-3 border border-gray-300 rounded-md text-sm resize-none min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="인사이트를 입력하세요..."
+                  />
+                  <button
+                    onClick={() => removeInsight(index)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                    title="삭제"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={addInsight}
+                className="w-full py-2 border-2 border-dashed border-gray-300 rounded-md text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors text-sm"
+              >
+                + 인사이트 추가
+              </button>
+            </div>
+          ) : (
+            <ul className="space-y-3 text-sm text-slate-700 leading-relaxed">
+              {insights.map((insight, index) => (
+                <li
+                  key={index}
+                  className={`flex gap-2 ${index === 0 ? 'bg-yellow-50 p-3 rounded-md' : ''}`}
+                >
+                  <span className="text-blue-500 font-bold">✓</span>
+                  <span>{renderText(insight)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Card 2: 2026 Cashflow Details */}
