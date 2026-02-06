@@ -16,5 +16,38 @@ export const defaultInsights = [
   "기말잔액은 **7,257**로 안정적인 수준 유지(전년 7,563 대비 소폭 감소). 영업 적자 축소와 투자/재무 지출 최소화 전략이 유효하게 작동 중."
 ];
 
-export const INSIGHTS_KEY = 'dashboard:insights';
+// 기본 주요 변동 내역 데이터
+export interface ChangeItem {
+  title: string;
+  value: string;
+  description?: string;
+}
 
+export const defaultChanges: ChangeItem[] = [
+  {
+    title: "영업활동",
+    value: "연간 -30 **(전년 대비 +5,236 개선)**",
+  },
+  {
+    title: "재고자산의 변동",
+    value: "연간 2,438 **(전년 -1,619 대비 +4,056)**",
+    description: "재고 효율화가 현금흐름 개선의 주요 요인으로 작용",
+  },
+  {
+    title: "기타영업 자산부채의 변동",
+    value: "연간 -400 **(전년 +3,581 대비 -3,981)**",
+  },
+  {
+    title: "STE 배당금",
+    value: "연간 18,000 **(2026년 11월 및 12월 수취)**",
+    description: "STE 감자 승인 후 배당금 수취",
+  },
+  {
+    title: "차입금의 변동(본사 차입금)",
+    value: "연간 -46,715",
+    description: "26년 12월 F&F(OC) 차입금 18,000 상환예정",
+  },
+];
+
+export const INSIGHTS_KEY = 'dashboard:insights';
+export const CHANGES_KEY = 'dashboard:changes';
