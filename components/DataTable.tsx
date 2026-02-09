@@ -146,9 +146,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
     const newExpandedGroups: Record<string, boolean> = {};
     const processGroup = (group: GroupedRow) => {
       if (group.children.length > 0) {
-        const isFinancialActivity = group.data[0]?.includes("재무활동");
-        const isOperatingActivity = group.data[0]?.includes("영업활동");
-        newExpandedGroups[group.id] = (isFinancialActivity || isOperatingActivity) ? true : expandAll;
+        newExpandedGroups[group.id] = expandAll;
         
         // 2단계 그룹도 처리
         group.children.forEach((child) => {
