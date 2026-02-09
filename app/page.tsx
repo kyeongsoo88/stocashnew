@@ -13,6 +13,7 @@ import {
 
 export default function Home() {
   const [cashflowData, setCashflowData] = useState<ParsedData | null>(null);
+  const [cashloanData, setCashloanData] = useState<ParsedData | null>(null);
   const [workingCapitalData, setWorkingCapitalData] = useState<ParsedData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,10 +21,12 @@ export default function Home() {
   const [showMonthly, setShowMonthly] = useState(false);
   const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>({
     cashflow: true,
+    cashloan: true,
     workingcapital: true,
   });
   const [expandAllGroups, setExpandAllGroups] = useState<Record<string, boolean>>({
     cashflow: false,
+    cashloan: false,
     workingcapital: false,
   });
 
@@ -31,12 +34,14 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      const [cfResult, wcResult] = await Promise.all([
+      const [cfResult, clResult, wcResult] = await Promise.all([
         fetchAndParseCsv(`/data/cashflow.csv`),
+        fetchAndParseCsv(`/data/cashloan.csv`),
         fetchAndParseCsv(`/data/workingcapital.csv`),
       ]);
       
       setCashflowData(cfResult);
+      setCashloanData(clResult);
       setWorkingCapitalData(wcResult);
       setLastUpdated(new Date());
     } catch (err) {
@@ -137,6 +142,41 @@ export default function Home() {
                         rows={cashflowData.rows}
                         showMonthly={showMonthly}
                         expandAll={expandAllGroups.cashflow}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {/* Cash and Loan Balance Table */}
+                {cashloanData && (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => toggleTable("cashloan")}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          {expandedTables.cashloan ? (
+                            <ChevronDown size={20} />
+                          ) : (
+                            <ChevronUp size={20} />
+                          )}
+                        </button>
+                        <h2 className="text-xl font-bold text-gray-900">현금잔액과 차입금잔액표</h2>
+                        <button
+                          onClick={() => setExpandAllGroups(prev => ({ ...prev, cashloan: !prev.cashloan }))}
+                          className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                        >
+                          {expandAllGroups.cashloan ? "접기 ▲" : "펼치기 ▼"}
+                        </button>
+                      </div>
+                    </div>
+                    {expandedTables.cashloan && (
+                      <DataTable 
+                        headers={cashloanData.headers} 
+                        rows={cashloanData.rows}
+                        showMonthly={showMonthly}
+                        expandAll={expandAllGroups.cashloan}
                       />
                     )}
                   </div>
