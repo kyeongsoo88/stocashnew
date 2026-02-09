@@ -52,7 +52,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
     const groups: GroupedRow[] = [];
     let currentGroup: GroupedRow | null = null;
 
-    const parentKeywords = ["영업활동", "투자활동", "재무활동", "매출수금", "비용"];
+    const parentKeywords = ["영업활동", "투자활동", "재무활동", "매출수금", "비용지출"];
     const standaloneKeywords = ["기초잔액", "기말잔액", "운전자본 합계"];
     const salesCollectionChildren = ["온라인(US+EU)", "홀세일", "라이선스"];
     const costChildren = ["인건비", "지급수수료", "광고선전비", "기타비용"];
@@ -60,7 +60,6 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
     rows.forEach((row, index) => {
       const firstCell = row[0] || "";
       const isParent = parentKeywords.some(k => {
-        if (k === "비용") return firstCell.trim() === "비용";
         return firstCell.includes(k);
       });
       const isStandalone = standaloneKeywords.some(k => firstCell.includes(k));
@@ -96,7 +95,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
         // 비용 그룹 종료 - 비용 자식이 아닌 항목이 오면 그룹 닫기
         // 기타(차입상환, STE지분매입), 기타(25년 STE지분매입, 26년 본사차입 상환)은 비용과 같은 레벨의 독립 항목
         currentGroup = null;
-        const isOtherRepayment = firstCell.includes("기타(차입상환") || firstCell.includes("기타(25년 STE지분매입");
+        const isOtherRepayment = firstCell.includes("기타(차입상환") || firstCell.includes("기타(25년 STE지분매입") || firstCell.includes("기타지출(25년 STE지분매입");
         groups.push({
           id: firstCell + index,
           data: row,
@@ -118,7 +117,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
         // 비용 그룹 종료 - 비용 자식이 아닌 항목이 오면 그룹 닫기
         // 기타(차입상환, STE지분매입), 기타(25년 STE지분매입, 26년 본사차입 상환)은 비용과 같은 레벨의 독립 항목
         currentGroup = null;
-        const isOtherRepayment = firstCell.includes("기타(차입상환") || firstCell.includes("기타(25년 STE지분매입");
+        const isOtherRepayment = firstCell.includes("기타(차입상환") || firstCell.includes("기타(25년 STE지분매입") || firstCell.includes("기타지출(25년 STE지분매입");
         groups.push({
           id: firstCell + index,
           data: row,
@@ -132,7 +131,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
         // Orphan row (no parent) - 혹시 모를 독립 항목
         // STE 배당, 물품대, 기타(차입상환, STE지분매입), 기타(25년 STE지분매입, 26년 본사차입 상환) 등은 매출수금/비용과 같은 레벨의 독립 항목
         currentGroup = null;
-        const isTopLevelItem = firstCell.includes("STE 배당") || firstCell.includes("물품대") || firstCell.includes("기타(차입상환") || firstCell.includes("기타(25년 STE지분매입");
+        const isTopLevelItem = firstCell.includes("STE 배당") || firstCell.includes("물품대") || firstCell.includes("기타(차입상환") || firstCell.includes("기타(25년 STE지분매입") || firstCell.includes("기타지출(25년 STE지분매입");
         groups.push({
           id: firstCell + index,
           data: row,
@@ -218,8 +217,8 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
               const isExpanded = expandedGroups[group.id] ?? false; 
               const hasChildren = group.children.length > 0;
               const visibleData = getVisibleCells(group.data);
-              const isOtherItem = group.data[0]?.includes("기타(본사차입") || group.data[0]?.includes("기타(차입상환") || group.data[0]?.includes("기타(25년 STE지분매입");
-              const isOtherRepaymentParent = group.data[0]?.includes("기타(차입상환") || group.data[0]?.includes("기타(25년 STE지분매입");
+              const isOtherItem = group.data[0]?.includes("기타(본사차입") || group.data[0]?.includes("기타(차입상환") || group.data[0]?.includes("기타(25년 STE지분매입") || group.data[0]?.includes("기타지출(25년 STE지분매입");
+              const isOtherRepaymentParent = group.data[0]?.includes("기타(차입상환") || group.data[0]?.includes("기타(25년 STE지분매입") || group.data[0]?.includes("기타지출(25년 STE지분매입");
 
               return (
                 <React.Fragment key={group.id}>

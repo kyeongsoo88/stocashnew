@@ -59,3 +59,4 @@ UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
 
 Vercel Dashboard > Storage > upstash-kv-orange-river에서 값을 복사하세요.
 
+
