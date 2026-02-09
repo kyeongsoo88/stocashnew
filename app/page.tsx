@@ -163,12 +163,6 @@ export default function Home() {
                           )}
                         </button>
                         <h2 className="text-xl font-bold text-gray-900">현금잔액과 차입금잔액표</h2>
-                        <button
-                          onClick={() => setExpandAllGroups(prev => ({ ...prev, cashloan: !prev.cashloan }))}
-                          className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                        >
-                          {expandAllGroups.cashloan ? "접기 ▲" : "펼치기 ▼"}
-                        </button>
                       </div>
                     </div>
                     {expandedTables.cashloan && (
@@ -198,12 +192,6 @@ export default function Home() {
                           )}
                         </button>
                         <h2 className="text-xl font-bold text-gray-900">운전자본표</h2>
-                        <button
-                          onClick={() => setExpandAllGroups(prev => ({ ...prev, workingcapital: !prev.workingcapital }))}
-                          className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                        >
-                          {expandAllGroups.workingcapital ? "접기 ▲" : "펼치기 ▼"}
-                        </button>
                       </div>
                     </div>
                     {expandedTables.workingcapital && (

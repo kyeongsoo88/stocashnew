@@ -210,7 +210,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                       "px-4 py-3 font-bold text-gray-900 border-b border-gray-200 whitespace-nowrap bg-white",
                       index === 0 && "sticky left-0 z-30 text-left min-w-[200px] pl-4 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]", 
                       index !== 0 && !isLast && "text-right font-semibold text-gray-800 min-w-[100px]",
-                      isLast && "text-right font-extrabold min-w-[120px] bg-gray-50"
+                      isLast && "text-right font-extrabold min-w-[120px] bg-white"
                   )}
                 >
                   {header}
@@ -247,7 +247,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                         : group.isHeader && group.data[0]?.includes("투자활동")
                         ? "font-bold text-gray-900 bg-white"
                         : group.isHeader && !isOtherRepaymentParent
-                        ? "font-bold text-gray-900 bg-gray-50" 
+                        ? "font-bold text-gray-900 bg-white" 
                         : !isOtherRepaymentParent && "font-medium text-gray-900"
                     )}
                   >
@@ -278,7 +278,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                             isLast && "text-right font-bold",
                             isLast && isBeginningOrEnding && "bg-blue-50 group-hover:bg-blue-100",
                             isLast && isInvesting && "bg-white group-hover:bg-gray-100",
-                            isLast && !isBeginningOrEnding && !isInvesting && "bg-gray-50 group-hover:bg-gray-100",
+                            isLast && !isBeginningOrEnding && !isInvesting && "bg-white group-hover:bg-gray-100",
                             // Negative numbers (첫 번째 열 제외)
                             negative && cellIndex !== 0 && "text-red-600"
                           )}
@@ -319,7 +319,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                             className={cn(
                               "group transition-colors",
                               childHasChildren ? "cursor-pointer hover:bg-gray-50" : "hover:bg-gray-50",
-                              isSecondLevel ? "font-bold text-gray-900 bg-gray-50" : isFinancialChild ? "font-bold text-gray-900" : "font-medium text-gray-900"
+                              isSecondLevel ? "font-bold text-gray-900 bg-white" : isFinancialChild ? "font-bold text-gray-900" : "font-medium text-gray-900"
                             )}
                           >
                             {visibleChildData.map((cell, cellIndex) => {
@@ -333,13 +333,13 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                                   className={cn(
                                     "px-4 py-2 border-b border-gray-100 whitespace-nowrap",
                                     cellIndex === 0 && "sticky left-0 z-10 text-left pl-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
-                                    cellIndex === 0 && isSecondLevel && "bg-gray-50 group-hover:bg-gray-100",
+                                    cellIndex === 0 && isSecondLevel && "bg-white group-hover:bg-gray-50",
                                     cellIndex === 0 && !isSecondLevel && "bg-white group-hover:bg-gray-50",
                                     cellIndex !== 0 && !isLast && "text-right",
-                                    cellIndex !== 0 && !isLast && isSecondLevel && "bg-gray-50",
+                                    cellIndex !== 0 && !isLast && isSecondLevel && "bg-white",
                                     isLast && "text-right font-medium",
-                                    isLast && isSecondLevel && "bg-gray-50 group-hover:bg-gray-100",
-                                    isLast && !isSecondLevel && "bg-gray-50 group-hover:bg-gray-100",
+                                    isLast && isSecondLevel && "bg-white group-hover:bg-gray-100",
+                                    isLast && !isSecondLevel && "bg-white group-hover:bg-gray-100",
                                     negative && cellIndex !== 0 && "text-red-600"
                                   )}
                                 >
@@ -396,7 +396,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                                         cellIndex !== 0 && !isLast && isSalesCollectionChild && !negative && "!text-gray-900",
                                         isLast && "text-right font-medium text-gray-900",
                                         isLast && isSalesCollectionChild && !negative && "!text-gray-900",
-                                        isLast && "bg-gray-50",
+                                        isLast && "bg-white",
                                         negative && cellIndex !== 0 && "!text-red-600"
                                       )}
                                     >
@@ -452,7 +452,7 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, show
                                   isLast && isSalesCollectionChild && !negative && "!text-gray-900 text-right font-medium",
                                   isLast && !isSalesCollectionChild && "text-right font-medium text-gray-900",
                                   isLast && isHighlighted && "bg-yellow-50",
-                                  isLast && !isHighlighted && "bg-gray-50",
+                                  isLast && !isHighlighted && "bg-white",
                                   negative && cellIndex !== 0 && "!text-red-600"
                                 )}
                               >
