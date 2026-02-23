@@ -123,20 +123,26 @@ export const DataTable: React.FC<DataTableProps> = ({
 
   const tree = useMemo(() => buildTree(rows), [rows]);
 
-  // init expanded state
+  // init expanded state - 기본값: 영업활동, 매출수금만 펼침
   useEffect(() => {
     const state: Record<string, boolean> = {};
     function init(nodes: TreeRow[]) {
       nodes.forEach(n => {
         if (n.children.length > 0) {
-          state[n.id] = expandAll;
+          const name = n.data[0] || '';
+          // 영업활동, 매출수금만 펼침 / 비용지출, 재무활동은 접힘
+          if (name.includes('영업활동') || name.includes('매출수금')) {
+            state[n.id] = true;
+          } else {
+            state[n.id] = false;
+          }
           init(n.children);
         }
       });
     }
     init(tree);
     setExpanded(state);
-  }, [expandAll, tree]);
+  }, [tree]);
 
   const toggle = (id: string) =>
     setExpanded(prev => ({ ...prev, [id]: !(prev[id] ?? false) }));
@@ -171,11 +177,11 @@ export const DataTable: React.FC<DataTableProps> = ({
                     key={i}
                     style={{ backgroundColor: headerBg, color: headerText }}
                     className={cn(
-                      'px-4 py-3 border font-bold whitespace-nowrap',
+                      'px-4 py-3 border font-bold whitespace-nowrap text-center',
                       headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                      i === 0 && 'sticky left-0 z-30 text-left min-w-[200px] pl-4',
-                      i !== 0 && !isLast && 'text-right min-w-[100px]',
-                      isLast && 'text-right min-w-[120px]',
+                      i === 0 && 'sticky left-0 z-30 min-w-[200px]',
+                      i !== 0 && !isLast && 'min-w-[100px]',
+                      isLast && 'min-w-[120px]',
                     )}
                   >
                     {h}
