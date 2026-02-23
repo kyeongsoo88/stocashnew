@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { fetchAndParseCsv, ParsedData } from "@/utils/csv";
 import { DataTable } from "@/components/DataTable";
 import { DashboardAnalysis } from "@/components/DashboardAnalysis";
 import { 
   Loader2, 
-  RefreshCw, 
   ChevronDown,
-  ChevronUp,
 } from "lucide-react";
+
+type GrowthRate = '100' | '130' | '150';
 
 export default function Home() {
   const [cashflowData, setCashflowData] = useState<ParsedData | null>(null);
@@ -19,6 +19,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [showMonthly, setShowMonthly] = useState(false);
+  const [growthRate, setGrowthRate] = useState<GrowthRate>('130');
+  const [showGrowthDropdown, setShowGrowthDropdown] = useState(false);
   const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>({
     cashflow: true,
     cashloan: true,
@@ -29,15 +31,35 @@ export default function Home() {
     cashloan: false,
     workingcapital: false,
   });
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const fetchData = async () => {
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowGrowthDropdown(false);
+      }
+    };
+
+    if (showGrowthDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showGrowthDropdown]);
+
+  const fetchData = async (rate: GrowthRate) => {
     setLoading(true);
     setError(null);
     try {
+      // 130%는 기본 파일, 100%와 150%는 별도 파일
+      const suffix = rate === '130' ? '' : rate;
       const [cfResult, clResult, wcResult] = await Promise.all([
-        fetchAndParseCsv(`/data/cashflow.csv`),
-        fetchAndParseCsv(`/data/cashloan.csv`),
-        fetchAndParseCsv(`/data/workingcapital.csv`),
+        fetchAndParseCsv(`/data/cashflow${suffix}.csv`),
+        fetchAndParseCsv(`/data/cashloan${suffix}.csv`),
+        fetchAndParseCsv(`/data/workingcapital${suffix}.csv`),
       ]);
       
       setCashflowData(cfResult);
@@ -53,8 +75,8 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(growthRate);
+  }, [growthRate]);
 
   const toggleTable = (tableId: string) => {
     setExpandedTables(prev => ({
@@ -63,22 +85,73 @@ export default function Home() {
     }));
   };
 
+  const handleGrowthRateChange = (rate: GrowthRate) => {
+    setGrowthRate(rate);
+    setShowGrowthDropdown(false);
+  };
+
+  const growthRateLabels: Record<GrowthRate, string> = {
+    '100': '100% (전년 동일)',
+    '130': '130% (기본)',
+    '150': '150% (고성장)',
+  };
+
   return (
     <main className="flex flex-col h-screen bg-gray-50 overflow-hidden font-['Pretendard']">
       {/* Header Section */}
-      <header className="px-8 py-4 border-b border-blue-900 shrink-0" style={{backgroundColor: '#3b5998'}}>
+      <header className="px-8 py-4 border-b border-blue-900 shrink-0 overflow-visible relative z-50 h-[74px] flex items-center" style={{backgroundColor: '#3b5998'}}>
         <div className="max-w-[1800px] mx-auto w-full">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold text-white mr-4">연간 자금계획</h1>
             
-            
             {/* Monthly Toggle */}
             <button
               onClick={() => setShowMonthly(!showMonthly)}
-              className="ml-2 px-4 py-2 bg-blue-800 text-white font-medium rounded hover:bg-blue-700 transition-colors flex items-center gap-1 border border-blue-600"
+              className="px-4 py-2 bg-blue-800 text-white font-medium rounded hover:bg-blue-700 transition-colors flex items-center gap-1 border border-blue-600"
             >
               월별 데이터 {showMonthly ? "접기 ▶" : "펼치기 ▶"}
             </button>
+
+            {/* Growth Rate Dropdown - Select Box Style */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setShowGrowthDropdown(!showGrowthDropdown)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded flex items-center justify-between gap-3 min-w-[140px] hover:border-gray-400 transition-colors"
+              >
+                <span style={{ color: '#111827' }} className="font-medium text-sm">{growthRate}% 성장</span>
+                <ChevronDown size={16} style={{ color: '#6b7280' }} className={`transition-transform ${showGrowthDropdown ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {/* Dropdown Menu - absolute position directly below button */}
+              {showGrowthDropdown && (
+                <div 
+                  className="absolute top-full left-0 mt-2 rounded-md border border-gray-200 shadow-xl py-1 min-w-full overflow-hidden"
+                  style={{ 
+                    zIndex: 9999, 
+                    backgroundColor: '#ffffff'
+                  }}
+                >
+                  {(['100', '130', '150'] as GrowthRate[]).map((rate) => (
+                    <button
+                      key={rate}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGrowthRateChange(rate);
+                      }}
+                      style={{ color: '#111827', backgroundColor: '#ffffff' }}
+                      className="w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-gray-50 flex items-center justify-between whitespace-nowrap font-medium"
+                    >
+                      <span>{rate}% 성장</span>
+                      {growthRate === rate && (
+                        <svg className="w-4 h-4 text-blue-600 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -105,6 +178,7 @@ export default function Home() {
                   <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
                     <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center gap-3">
                       <h2 className="text-lg font-bold text-gray-900">현금흐름표</h2>
+                      <span className="text-sm text-blue-600 font-medium">(매출 {growthRate}% 가정)</span>
                       <button
                         onClick={() => toggleTable("cashflow")}
                         className="px-3 py-1 bg-gray-700 text-white text-xs font-bold rounded hover:bg-gray-800 flex items-center gap-1 transition-colors"
