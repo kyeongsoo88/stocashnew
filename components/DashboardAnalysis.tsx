@@ -193,34 +193,9 @@ export const DashboardAnalysis = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full overflow-hidden flex flex-col">
-      <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold text-gray-900">2026년 현금흐름 분석</h2>
-          {useLocalStorage && (
-            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full flex items-center gap-1" title="Upstash Redis 미연결">
-              <AlertCircle size={12} />
-              로컬 저장
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={checkStatus}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            title="환경 변수 상태 확인"
-          >
-            <Info size={18} />
-          </button>
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-            title="새로고침"
-          >
-            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-          </button>
-        </div>
+    <div className="bg-white rounded-lg shadow border border-gray-300 h-full overflow-hidden flex flex-col">
+      <div className="px-5 py-4 border-b border-gray-300 bg-white">
+        <h2 className="text-lg font-bold text-gray-900">설명과 분석</h2>
       </div>
       
       {/* 상태 정보 표시 */}
@@ -259,19 +234,16 @@ export const DashboardAnalysis = () => {
       )}
       
       <div className="p-6 space-y-6 overflow-y-auto flex-1">
-        {/* Card 1: Key Insights */}
-        <div className="bg-slate-50 rounded-lg p-5 border border-slate-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-5 bg-blue-600 rounded-full"></div>
-              <h3 className="font-bold text-lg text-slate-800">핵심 인사이트</h3>
-            </div>
+        {/* Section 1: 핵심 인사이트 */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base font-bold text-gray-900">핵심 인사이트</h3>
             {!isEditingInsights ? (
               <button
                 onClick={() => setIsEditingInsights(true)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
               >
-                <Edit2 size={14} />
+                <Edit2 size={12} />
                 편집
               </button>
             ) : (
@@ -281,17 +253,17 @@ export const DashboardAnalysis = () => {
                     setEditedInsights(insights);
                     setIsEditingInsights(false);
                   }}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                  className="flex items-center gap-1 px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600 transition-colors"
                 >
-                  <X size={14} />
+                  <X size={12} />
                   취소
                 </button>
                 <button
                   onClick={handleSaveInsights}
                   disabled={saving}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
+                  className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors disabled:opacity-50"
                 >
-                  <Save size={14} />
+                  <Save size={12} />
                   {saving ? '저장중...' : '저장'}
                 </button>
               </div>
@@ -299,9 +271,9 @@ export const DashboardAnalysis = () => {
           </div>
           
           {loading ? (
-            <div className="text-center py-4 text-gray-500">로딩 중...</div>
+            <div className="text-center py-4 text-gray-500 text-sm">로딩 중...</div>
           ) : isEditingInsights ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {editedInsights.map((insight, index) => (
                 <div key={index} className="flex gap-2">
                   <textarea
@@ -311,7 +283,7 @@ export const DashboardAnalysis = () => {
                       newInsights[index] = e.target.value;
                       setEditedInsights(newInsights);
                     }}
-                    className="flex-1 p-3 border border-gray-300 rounded-md text-sm text-gray-900 bg-white resize-none min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 p-2 border border-gray-300 rounded text-sm text-gray-900 bg-white resize-none min-h-[60px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="인사이트를 입력하세요..."
                   />
                   <button
@@ -319,29 +291,29 @@ export const DashboardAnalysis = () => {
                       const newInsights = editedInsights.filter((_, i) => i !== index);
                       setEditedInsights(newInsights);
                     }}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
                     title="삭제"
                   >
-                    <X size={20} />
+                    <X size={16} />
                   </button>
                 </div>
               ))}
               <button
                 onClick={() => setEditedInsights([...editedInsights, ''])}
-                className="w-full py-2 border-2 border-dashed border-gray-300 rounded-md text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors text-sm flex items-center justify-center gap-2"
+                className="w-full py-2 border-2 border-dashed border-gray-300 rounded text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors text-xs flex items-center justify-center gap-2"
               >
-                <Plus size={16} />
+                <Plus size={14} />
                 인사이트 추가
               </button>
             </div>
           ) : (
-            <ul className="space-y-3 text-sm text-slate-700 leading-relaxed">
+            <ul className="space-y-2.5 text-sm text-gray-800 leading-relaxed">
               {insights.map((insight, index) => (
                 <li
                   key={index}
-                  className={`flex gap-2 ${index === 0 ? 'bg-yellow-50 p-3 rounded-md' : ''}`}
+                  className="flex gap-2"
                 >
-                  <span className="text-blue-500 font-bold">✓</span>
+                  <span className="text-blue-600 font-bold shrink-0">•</span>
                   <span>{renderText(insight)}</span>
                 </li>
               ))}
@@ -349,121 +321,185 @@ export const DashboardAnalysis = () => {
           )}
         </div>
 
-        {/* Card 2: 주요 변동 내역 */}
-        <div className="bg-slate-50 rounded-lg p-5 border border-slate-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-5 bg-green-600 rounded-full"></div>
-              <h3 className="font-bold text-lg text-slate-800">주요 변동 내역</h3>
+        {/* Section 2: 2026년 현금흐름표 */}
+        <div>
+          <h3 className="text-base font-bold text-gray-900 mb-3">2026년 현금흐름표</h3>
+          <div className="space-y-2.5 text-sm text-gray-800 leading-relaxed">
+            <div>
+              <div className="font-semibold text-gray-900 mb-1">영업활동</div>
+              <div className="text-gray-700 pl-2">매출수금은 전년 대비 +3.4% YoY 증가, 물품대는 전년 대비 △775M YoY 감소 (생산비 △1,175M 감소 + 전년도 연체분 +200M 상환).</div>
             </div>
-            {!isEditingChanges ? (
-              <button
-                onClick={() => setIsEditingChanges(true)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              >
-                <Edit2 size={14} />
-                편집
-              </button>
-            ) : (
-              <div className="flex gap-2">
+            <div>
+              <div className="font-semibold text-gray-900 mb-1">자산성지출</div>
+              <div className="text-gray-700 pl-2">연간 (38.9M 원) (전년 대비 4.35M 원, +10.1%).</div>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900 mb-1">기타수익</div>
+              <div className="text-gray-700 pl-2">연간 68.5M 원 (전년 대비 23.1M 원, +51.0%).</div>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900 mb-1">차입금</div>
+              <div className="text-gray-700 pl-2">연간 730M 상환 (전년 대비 409M 순차입).</div>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900 mb-1">Net Cash</div>
+              <div className="text-gray-700 pl-2">연간 (10.8M 원) (전년 대비 24.5M 원, +69.3%).</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 3: 2026년 운전자본표 */}
+        <div>
+          <h3 className="text-base font-bold text-gray-900 mb-3">2026년 운전자본표</h3>
+          <div className="space-y-2.5 text-sm text-gray-800 leading-relaxed">
+            <div>
+              <div className="font-semibold text-gray-900 mb-1">매출채권</div>
+              <div className="text-gray-700 pl-2">전년 대비 182M 원 감소, 현금 유입에 기여. 연간 지속적인 개선 추세로 구조적 변화로 판단.</div>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900 mb-1">재고자산</div>
+              <div className="text-gray-700 pl-2">전년 대비 582M 원 감소, 현금 유입에 기여. 연간 지속적인 감소 추세로 보수적 재고 관리 정책으로 판단.</div>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900 mb-1">매입채무</div>
+              <div className="text-gray-700 pl-2">잔액 전년 대비 450M 원 감소, 전년도 연체분 200M 원 해결 및 재고 구매 감소 반영.</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 4: 관리 포인트 */}
+        <div>
+          <h3 className="text-base font-bold text-gray-900 mb-3">관리 포인트</h3>
+          <ul className="space-y-2 text-sm text-gray-800 leading-relaxed">
+            <li className="flex gap-2">
+              <span className="text-gray-600 shrink-0">•</span>
+              <span>월별 운전자본 실적 계획 대비 모니터링 (출고 계획 진행률 기반 발주 및 목표 재고일수 달성).</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-gray-600 shrink-0">•</span>
+              <span>재고 수준 적정성 검토: 매출 동향에 따른 유연한 재고 구매 계획 반영.</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-gray-600 shrink-0">•</span>
+              <span>대행사 신용 운영을 통한 재무 안정성 확보 (선급금 한도 내).</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* Card 2: 주요 변동 내역 (Hidden by default, can be shown if needed) */}
+        {changes.length > 0 && (
+          <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-bold text-gray-900">주요 변동 내역</h3>
+              {!isEditingChanges ? (
+                <button
+                  onClick={() => setIsEditingChanges(true)}
+                  className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
+                >
+                  <Edit2 size={12} />
+                  편집
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setEditedChanges(changes);
+                      setIsEditingChanges(false);
+                    }}
+                    className="flex items-center gap-1 px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600 transition-colors"
+                  >
+                    <X size={12} />
+                    취소
+                  </button>
+                  <button
+                    onClick={handleSaveChanges}
+                    disabled={saving}
+                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    <Save size={12} />
+                    {saving ? '저장중...' : '저장'}
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            {isEditingChanges ? (
+              <div className="space-y-3">
+                {editedChanges.map((change, index) => (
+                  <div key={index} className="p-2 bg-white rounded border border-gray-200">
+                    <div className="flex justify-between items-start mb-1">
+                      <input
+                        type="text"
+                        value={change.title}
+                        onChange={(e) => {
+                          const newChanges = [...editedChanges];
+                          newChanges[index].title = e.target.value;
+                          setEditedChanges(newChanges);
+                        }}
+                        className="flex-1 font-bold text-gray-900 border-b border-gray-300 pb-1 focus:outline-none focus:border-blue-500 bg-white text-sm"
+                        placeholder="제목"
+                      />
+                      <button
+                        onClick={() => {
+                          const newChanges = editedChanges.filter((_, i) => i !== index);
+                          setEditedChanges(newChanges);
+                        }}
+                        className="ml-2 p-1 text-red-600 hover:bg-red-50 rounded"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={change.value}
+                      onChange={(e) => {
+                        const newChanges = [...editedChanges];
+                        newChanges[index].value = e.target.value;
+                        setEditedChanges(newChanges);
+                      }}
+                      className="w-full text-xs text-gray-700 mb-1 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 bg-white"
+                      placeholder="값"
+                    />
+                    <input
+                      type="text"
+                      value={change.description || ''}
+                      onChange={(e) => {
+                        const newChanges = [...editedChanges];
+                        newChanges[index].description = e.target.value;
+                        setEditedChanges(newChanges);
+                      }}
+                      className="w-full text-xs text-gray-600 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 bg-white"
+                      placeholder="설명 (선택사항)"
+                    />
+                  </div>
+                ))}
                 <button
                   onClick={() => {
-                    setEditedChanges(changes);
-                    setIsEditingChanges(false);
+                    setEditedChanges([...editedChanges, { title: '', value: '', description: '' }]);
                   }}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                  className="w-full py-2 border-2 border-dashed border-gray-300 rounded text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors text-xs flex items-center justify-center gap-2"
                 >
-                  <X size={14} />
-                  취소
+                  <Plus size={14} />
+                  항목 추가
                 </button>
-                <button
-                  onClick={handleSaveChanges}
-                  disabled={saving}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
-                >
-                  <Save size={14} />
-                  {saving ? '저장중...' : '저장'}
-                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {changes.map((change, index) => (
+                  <div key={index}>
+                    <div className="font-bold text-gray-900 mb-1 text-sm">{change.title}</div>
+                    <div className="text-xs text-gray-700">
+                      {renderText(change.value)}
+                      {change.description && (
+                        <p className="text-xs text-gray-600 mt-1">{change.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-          
-          {isEditingChanges ? (
-            <div className="space-y-4">
-              {editedChanges.map((change, index) => (
-                <div key={index} className="p-3 bg-white rounded-md border border-gray-200">
-                  <div className="flex justify-between items-start mb-2">
-                    <input
-                      type="text"
-                      value={change.title}
-                      onChange={(e) => {
-                        const newChanges = [...editedChanges];
-                        newChanges[index].title = e.target.value;
-                        setEditedChanges(newChanges);
-                      }}
-                      className="flex-1 font-bold text-slate-800 border-b border-gray-300 pb-1 focus:outline-none focus:border-blue-500 bg-white text-gray-900"
-                      placeholder="제목"
-                    />
-                    <button
-                      onClick={() => {
-                        const newChanges = editedChanges.filter((_, i) => i !== index);
-                        setEditedChanges(newChanges);
-                      }}
-                      className="ml-2 p-1 text-red-600 hover:bg-red-50 rounded"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    value={change.value}
-                    onChange={(e) => {
-                      const newChanges = [...editedChanges];
-                      newChanges[index].value = e.target.value;
-                      setEditedChanges(newChanges);
-                    }}
-                    className="w-full text-sm text-slate-600 mb-2 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 bg-white text-gray-900"
-                    placeholder="값 (예: 연간 -30 **(전년 대비 +5,236 개선)**)"
-                  />
-                  <input
-                    type="text"
-                    value={change.description || ''}
-                    onChange={(e) => {
-                      const newChanges = [...editedChanges];
-                      newChanges[index].description = e.target.value;
-                      setEditedChanges(newChanges);
-                    }}
-                    className="w-full text-xs text-slate-500 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 bg-white text-gray-900"
-                    placeholder="설명 (선택사항)"
-                  />
-                </div>
-              ))}
-              <button
-                onClick={() => {
-                  setEditedChanges([...editedChanges, { title: '', value: '', description: '' }]);
-                }}
-                className="w-full py-2 border-2 border-dashed border-gray-300 rounded-md text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors text-sm flex items-center justify-center gap-2"
-              >
-                <Plus size={16} />
-                항목 추가
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {changes.map((change, index) => (
-                <div key={index}>
-                  <div className="font-bold text-slate-800 mb-1">{change.title}</div>
-                  <div className="text-sm text-slate-600">
-                    {renderText(change.value)}
-                    {change.description && (
-                      <p className="text-xs text-slate-500 mt-1">{change.description}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
