@@ -117,23 +117,21 @@ export default function Home() {
                   <div className="bg-white rounded-lg shadow border border-gray-300 overflow-hidden">
                     <div className="px-5 py-4 border-b border-gray-300 bg-white flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => toggleTable("cashflow")}
-                          className="text-gray-600 hover:text-gray-800"
-                        >
-                          {expandedTables.cashflow ? (
-                            <ChevronDown size={18} />
-                          ) : (
-                            <ChevronUp size={18} />
-                          )}
-                        </button>
                         <h2 className="text-lg font-bold text-gray-900">현금흐름표</h2>
                         <button
-                          onClick={() => setExpandAllGroups(prev => ({ ...prev, cashflow: !prev.cashflow }))}
-                          className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1 ml-2"
+                          onClick={() => toggleTable("cashflow")}
+                          className="px-3 py-1 bg-slate-700 text-white text-sm rounded hover:bg-slate-800 flex items-center gap-1 transition-colors"
                         >
-                          {expandAllGroups.cashflow ? "접기 ▲" : "펼치기 ▼"}
+                          {expandedTables.cashflow ? "접기 ▲" : "펼치기 ▼"}
                         </button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                         {/* Removed expand all specific button to match screenshot simplified look, or keep it if needed. 
+                            Screenshot shows just one button "펼치기 ▼". I will assume this toggles the table visibility (collapse/expand) 
+                            OR it expands all groups. Given the context "펼치기", it usually means expand the section.
+                            However, there is also "expandAllGroups". 
+                            I will keep the main toggle as the "Table Visibility" toggle for now, styled as the dark button.
+                         */}
                       </div>
                     </div>
                     {expandedTables.cashflow && (
@@ -142,6 +140,7 @@ export default function Home() {
                         rows={cashflowData.rows}
                         showMonthly={showMonthly}
                         expandAll={expandAllGroups.cashflow}
+                        onExpandAllChange={(val) => setExpandAllGroups(prev => ({ ...prev, cashflow: val }))}
                       />
                     )}
                   </div>
@@ -151,26 +150,14 @@ export default function Home() {
                 {cashloanData && (
                   <div className="bg-white rounded-lg shadow border border-gray-300 overflow-hidden">
                     <div className="px-5 py-4 border-b border-gray-300 bg-white flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => toggleTable("cashloan")}
-                          className="text-gray-600 hover:text-gray-800"
-                        >
-                          {expandedTables.cashloan ? (
-                            <ChevronDown size={18} />
-                          ) : (
-                            <ChevronUp size={18} />
-                          )}
-                        </button>
-                        <h2 className="text-lg font-bold text-gray-900">현금잔액과 차입금잔액표</h2>
-                      </div>
+                      <h2 className="text-lg font-bold text-gray-900">현금잔액과 차입금잔액표</h2>
                     </div>
                     {expandedTables.cashloan && (
                       <DataTable 
                         headers={cashloanData.headers} 
                         rows={cashloanData.rows}
                         showMonthly={showMonthly}
-                        expandAll={expandAllGroups.cashloan}
+                        expandAll={true} 
                       />
                     )}
                   </div>
@@ -181,22 +168,12 @@ export default function Home() {
                   <div className="bg-white rounded-lg shadow border border-gray-300 overflow-hidden">
                     <div className="px-5 py-4 border-b border-gray-300 bg-white flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => toggleTable("workingcapital")}
-                          className="text-gray-600 hover:text-gray-800"
-                        >
-                          {expandedTables.workingcapital ? (
-                            <ChevronDown size={18} />
-                          ) : (
-                            <ChevronUp size={18} />
-                          )}
-                        </button>
                         <h2 className="text-lg font-bold text-gray-900">운전자본표</h2>
                         <button
-                          onClick={() => setExpandAllGroups(prev => ({ ...prev, workingcapital: !prev.workingcapital }))}
-                          className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1 ml-2"
+                          onClick={() => toggleTable("workingcapital")}
+                          className="px-3 py-1 bg-slate-700 text-white text-sm rounded hover:bg-slate-800 flex items-center gap-1 transition-colors"
                         >
-                          {expandAllGroups.workingcapital ? "접기 ▲" : "펼치기 ▼"}
+                          {expandedTables.workingcapital ? "접기 ▲" : "펼치기 ▼"}
                         </button>
                       </div>
                     </div>
@@ -206,6 +183,7 @@ export default function Home() {
                         rows={workingCapitalData.rows}
                         showMonthly={showMonthly}
                         expandAll={expandAllGroups.workingcapital}
+                        onExpandAllChange={(val) => setExpandAllGroups(prev => ({ ...prev, workingcapital: val }))}
                       />
                     )}
                   </div>

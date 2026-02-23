@@ -170,26 +170,40 @@ export const DashboardAnalysis = () => {
 
   // 마크다운 스타일 텍스트 렌더링
   const renderText = (text: string) => {
-    const parts = text.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        const content = part.slice(2, -2);
-        const isNegative = content.includes('-') && !content.includes('+');
-        const isPositive = content.includes('+');
-        
-        return (
-          <span
-            key={i}
-            className={`font-medium ${
-              isNegative ? 'text-red-500' : isPositive ? 'text-blue-600' : 'text-slate-900'
-            }`}
-          >
-            {content}
-          </span>
-        );
-      }
-      return <span key={i}>{part}</span>;
-    });
+    // 줄바꿈 처리
+    const lines = text.split('\n');
+    return (
+      <>
+        {lines.map((line, lineIndex) => {
+          const parts = line.split(/(\*\*.*?\*\*)/g);
+          const content = parts.map((part, i) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              const innerContent = part.slice(2, -2);
+              const isNegative = innerContent.includes('-') && !innerContent.includes('+');
+              const isPositive = innerContent.includes('+');
+              
+              return (
+                <span
+                  key={i}
+                  className={`font-medium ${
+                    isNegative ? 'text-red-500' : isPositive ? 'text-blue-600' : 'text-slate-900'
+                  }`}
+                >
+                  {innerContent}
+                </span>
+              );
+            }
+            return <span key={i}>{part}</span>;
+          });
+
+          return (
+            <div key={lineIndex} className={lineIndex > 0 ? "pl-4 mt-1 text-gray-600" : ""}>
+               {content}
+            </div>
+          );
+        })}
+      </>
+    );
   };
 
   return (
@@ -233,11 +247,11 @@ export const DashboardAnalysis = () => {
         </div>
       )}
       
-      <div className="p-6 space-y-6 overflow-y-auto flex-1">
+      <div className="p-6 space-y-8 overflow-y-auto flex-1">
         {/* Section 1: 핵심 인사이트 */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-base font-bold text-gray-900">핵심 인사이트</h3>
+          <div className="flex items-center justify-between mb-3 border-l-4 border-blue-600 pl-3">
+            <h3 className="text-lg font-bold text-gray-900">핵심 인사이트</h3>
             {!isEditingInsights ? (
               <button
                 onClick={() => setIsEditingInsights(true)}
@@ -307,14 +321,14 @@ export const DashboardAnalysis = () => {
               </button>
             </div>
           ) : (
-            <ul className="space-y-2.5 text-sm text-gray-800 leading-relaxed">
+            <ul className="space-y-3 text-sm text-gray-800 leading-relaxed">
               {insights.map((insight, index) => (
                 <li
                   key={index}
-                  className="flex gap-2"
+                  className="flex gap-2 items-start"
                 >
-                  <span className="text-blue-600 font-bold shrink-0">•</span>
-                  <span>{renderText(insight)}</span>
+                  <span className="text-gray-400 mt-0.5 shrink-0">✓</span>
+                  <div className="flex-1">{renderText(insight)}</div>
                 </li>
               ))}
             </ul>
@@ -323,65 +337,71 @@ export const DashboardAnalysis = () => {
 
         {/* Section 2: 2026년 현금흐름표 */}
         <div>
-          <h3 className="text-base font-bold text-gray-900 mb-3">2026년 현금흐름표</h3>
-          <div className="space-y-2.5 text-sm text-gray-800 leading-relaxed">
+          <div className="border-l-4 border-green-600 pl-3 mb-3">
+             <h3 className="text-lg font-bold text-gray-900">2026년 현금흐름표</h3>
+          </div>
+          <div className="space-y-2.5 text-sm text-gray-800 leading-relaxed pl-1">
             <div>
-              <div className="font-semibold text-gray-900 mb-1">영업활동</div>
-              <div className="text-gray-700 pl-2">매출수금은 전년 대비 +3.4% YoY 증가, 물품대는 전년 대비 △775M YoY 감소 (생산비 △1,175M 감소 + 전년도 연체분 +200M 상환).</div>
+              <span className="font-bold text-gray-900 mr-1">영업활동:</span>
+              <span className="text-gray-700">매출 수금 전년비 +3.4% 증가 물품대 전년비 △775M 감소계획 (생산비 △1,175M 감소 + 전년 연체분 +200M 상환)</span>
             </div>
             <div>
-              <div className="font-semibold text-gray-900 mb-1">자산성지출</div>
-              <div className="text-gray-700 pl-2">연간 (38.9M 원) (전년 대비 4.35M 원, +10.1%).</div>
+              <span className="font-bold text-gray-900 mr-1">자산성지출:</span>
+              <span className="text-gray-700">연간 (38.9M위안) (전년 대비 4.35M위안, +10.1%)</span>
             </div>
             <div>
-              <div className="font-semibold text-gray-900 mb-1">기타수익</div>
-              <div className="text-gray-700 pl-2">연간 68.5M 원 (전년 대비 23.1M 원, +51.0%).</div>
+              <span className="font-bold text-gray-900 mr-1">기타수익:</span>
+              <span className="text-gray-700">연간 68.5M위안 (전년 대비 23.1M위안, +51.0%)</span>
             </div>
             <div>
-              <div className="font-semibold text-gray-900 mb-1">차입금</div>
-              <div className="text-gray-700 pl-2">연간 730M 상환 (전년 대비 409M 순차입).</div>
+              <span className="font-bold text-gray-900 mr-1">차입금:</span>
+              <span className="text-gray-700">연간 730M 상환 (vs 전년 409M 순차입)</span>
             </div>
             <div>
-              <div className="font-semibold text-gray-900 mb-1">Net Cash</div>
-              <div className="text-gray-700 pl-2">연간 (10.8M 원) (전년 대비 24.5M 원, +69.3%).</div>
+              <span className="font-bold text-gray-900 mr-1">net cash:</span>
+              <span className="text-gray-700">연간 (10.8M위안) (전년 대비 24.5M위안, +69.3%)</span>
             </div>
           </div>
         </div>
 
         {/* Section 3: 2026년 운전자본표 */}
         <div>
-          <h3 className="text-base font-bold text-gray-900 mb-3">2026년 운전자본표</h3>
-          <div className="space-y-2.5 text-sm text-gray-800 leading-relaxed">
+          <div className="border-l-4 border-purple-600 pl-3 mb-3">
+             <h3 className="text-lg font-bold text-gray-900">2026년 운전자본표</h3>
+          </div>
+          <div className="space-y-2.5 text-sm text-gray-800 leading-relaxed pl-1">
             <div>
-              <div className="font-semibold text-gray-900 mb-1">매출채권</div>
-              <div className="text-gray-700 pl-2">전년 대비 182M 원 감소, 현금 유입에 기여. 연간 지속적인 개선 추세로 구조적 변화로 판단.</div>
+              <span className="font-bold text-gray-900 mr-1">매출채권:</span>
+              <span className="text-gray-700">매출채권이 전년 대비 182M위안 감소하여 현금 유입에 기여. 연중 균등하게 개선되어 구조적 변화로 판단.</span>
             </div>
             <div>
-              <div className="font-semibold text-gray-900 mb-1">재고자산</div>
-              <div className="text-gray-700 pl-2">전년 대비 582M 원 감소, 현금 유입에 기여. 연간 지속적인 감소 추세로 보수적 재고 관리 정책으로 판단.</div>
+              <span className="font-bold text-gray-900 mr-1">재고자산:</span>
+              <span className="text-gray-700">재고자산이 582M위안 감소하여 현금 유입 기여. 연중 균등 감소하여 보수적 재고 운영 정책으로 판단.</span>
             </div>
             <div>
-              <div className="font-semibold text-gray-900 mb-1">매입채무</div>
-              <div className="text-gray-700 pl-2">잔액 전년 대비 450M 원 감소, 전년도 연체분 200M 원 해결 및 재고 구매 감소 반영.</div>
+              <span className="font-bold text-gray-900 mr-1">매입채무:</span>
+              <span className="text-gray-700">매입채무가 잔액이 450M위안 감소는 전년 연체 200M 해소 및 재고매입 감소분 반영</span>
             </div>
           </div>
         </div>
 
         {/* Section 4: 관리 포인트 */}
         <div>
-          <h3 className="text-base font-bold text-gray-900 mb-3">관리 포인트</h3>
-          <ul className="space-y-2 text-sm text-gray-800 leading-relaxed">
+          <div className="border-l-4 border-orange-400 pl-3 mb-3">
+             <h3 className="text-lg font-bold text-gray-900">관리 포인트</h3>
+          </div>
+          <ul className="space-y-3 text-sm text-gray-800 leading-relaxed pl-1">
             <li className="flex gap-2">
-              <span className="text-gray-600 shrink-0">•</span>
-              <span>월별 운전자본 실적 계획 대비 모니터링 (출고 계획 진행률 기반 발주 및 목표 재고일수 달성).</span>
+              <span className="text-gray-400 shrink-0"></span>
+              <span>월별 운전자본 계획대비 실적 모니터링 (출고 계획 진척 및 목표 재고주수 기반 발주 진행)</span>
             </li>
             <li className="flex gap-2">
-              <span className="text-gray-600 shrink-0">•</span>
-              <span>재고 수준 적정성 검토: 매출 동향에 따른 유연한 재고 구매 계획 반영.</span>
+              <span className="text-gray-400 shrink-0"></span>
+              <span>재고 수준 적정성 검토: 매출 추세 반영 유동적 재고 매입계획 반영</span>
             </li>
             <li className="flex gap-2">
-              <span className="text-gray-600 shrink-0">•</span>
-              <span>대행사 신용 운영을 통한 재무 안정성 확보 (선급금 한도 내).</span>
+              <span className="text-gray-400 shrink-0"></span>
+              <span>선수금 한도 내, 대리상 여신 운영을 통한 재무 안정성 확보</span>
             </li>
           </ul>
         </div>
