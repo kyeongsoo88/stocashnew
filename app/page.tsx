@@ -66,7 +66,7 @@ export default function Home() {
   return (
     <main className="flex flex-col h-screen bg-gray-50 overflow-hidden font-['Pretendard']">
       {/* Header Section */}
-      <header className="px-8 py-4 border-b border-blue-900 shrink-0" style={{backgroundColor: '#1e40af'}}>
+      <header className="px-8 py-4 border-b border-blue-900 shrink-0" style={{backgroundColor: '#3b5998'}}>
         <div className="max-w-[1800px] mx-auto w-full">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold text-white mr-4">연간 자금계획</h1>

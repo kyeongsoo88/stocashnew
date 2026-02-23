@@ -159,7 +159,7 @@ export const DataTable: React.FC<DataTableProps> = ({
 
   if (!headers.length) return <div className="p-4 text-gray-900">No data available</div>;
 
-  const headerBg   = headerStyle === 'dark' ? '#1e40af' : '#f3f4f6';
+  const headerBg   = headerStyle === 'dark' ? '#3b5998' : '#f3f4f6';
   const headerText = headerStyle === 'dark' ? '#ffffff'  : '#111827';
 
   return (
