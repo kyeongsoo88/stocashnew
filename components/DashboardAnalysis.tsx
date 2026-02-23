@@ -168,9 +168,8 @@ export const DashboardAnalysis = () => {
     }
   };
 
-  // 마크다운 스타일 텍스트 렌더링
+  // 마크다운 스타일 텍스트 렌더링 - 모든 글씨 검정색
   const renderText = (text: string) => {
-    // 줄바꿈 처리
     const lines = text.split('\n');
     return (
       <>
@@ -180,25 +179,21 @@ export const DashboardAnalysis = () => {
             if (part.startsWith('**') && part.endsWith('**')) {
               const innerContent = part.slice(2, -2);
               const isNegative = innerContent.includes('-') && !innerContent.includes('+');
-              const isPositive = innerContent.includes('+');
-              
               return (
                 <span
                   key={i}
-                  className={`font-medium ${
-                    isNegative ? 'text-red-500' : isPositive ? 'text-blue-600' : 'text-slate-900'
-                  }`}
+                  style={{ color: isNegative ? '#dc2626' : '#111827' }}
+                  className="font-bold"
                 >
                   {innerContent}
                 </span>
               );
             }
-            return <span key={i}>{part}</span>;
+            return <span key={i} style={{ color: '#111827' }}>{part}</span>;
           });
-
           return (
-            <div key={lineIndex} className={lineIndex > 0 ? "pl-4 mt-1 text-gray-600" : ""}>
-               {content}
+            <div key={lineIndex} style={{ color: '#111827' }} className={lineIndex > 0 ? "pl-4 mt-1" : ""}>
+              {content}
             </div>
           );
         })}
@@ -207,55 +202,47 @@ export const DashboardAnalysis = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow border border-gray-300 h-full overflow-hidden flex flex-col">
-      <div className="px-5 py-4 border-b border-gray-300 bg-white">
-        <h2 className="text-lg font-bold text-gray-900">설명과 분석</h2>
+    <div className="bg-white rounded-lg shadow border border-gray-200 h-full overflow-hidden flex flex-col">
+      {/* 헤더 */}
+      <div className="px-5 py-4 border-b border-gray-200 bg-white">
+        <h2 className="text-lg font-bold" style={{ color: '#111827' }}>설명과 분석</h2>
       </div>
       
-      {/* 상태 정보 표시 */}
+      {/* 상태 정보 (숨김) */}
       {showStatus && statusInfo && (
         <div className="mx-4 mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-bold text-blue-900">환경 변수 상태</span>
-            <button onClick={() => setShowStatus(false)} className="text-blue-600 hover:text-blue-800">
+            <span className="font-bold" style={{ color: '#1e3a5f' }}>환경 변수 상태</span>
+            <button onClick={() => setShowStatus(false)} style={{ color: '#2563eb' }}>
               <X size={16} />
             </button>
           </div>
-          <div className="space-y-1 text-blue-800">
+          <div className="space-y-1" style={{ color: '#1e3a5f' }}>
             <div>✅ Upstash 설정: {statusInfo.upstashConfigured ? '✓ 완료' : '✗ 미완료'}</div>
             <div>📍 URL: {statusInfo.hasUrl ? '✓ 설정됨' : '✗ 없음'} ({statusInfo.urlPreview})</div>
             <div>🔑 Token: {statusInfo.hasToken ? '✓ 설정됨' : '✗ 없음'} ({statusInfo.tokenPreview})</div>
-            {!statusInfo.upstashConfigured && (
-              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-900">
-                <div className="font-bold mb-1">⚠️ Upstash가 설정되지 않았습니다</div>
-                <div className="text-xs space-y-1">
-                  <div>1. Vercel &gt; Settings &gt; Environment Variables 확인</div>
-                  <div>2. UPSTASH_REDIS_REST_URL 확인</div>
-                  <div>3. UPSTASH_REDIS_REST_TOKEN 확인</div>
-                  <div>4. Deployments &gt; 최신 배포 &gt; Redeploy</div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
       
       {errorMessage && (
-        <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-start gap-2">
+        <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm flex items-start gap-2" style={{ color: '#b91c1c' }}>
           <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
       
-      <div className="p-6 space-y-8 overflow-y-auto flex-1">
+      <div className="p-5 space-y-6 overflow-y-auto flex-1">
+
         {/* Section 1: 핵심 인사이트 */}
-        <div>
-          <div className="flex items-center justify-between mb-3 border-l-4 border-blue-600 pl-3">
-            <h3 className="text-lg font-bold text-gray-900">핵심 인사이트</h3>
+        <div className="border-l-4 border-blue-500 pl-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base font-bold" style={{ color: '#111827' }}>핵심 인사이트</h3>
             {!isEditingInsights ? (
               <button
                 onClick={() => setIsEditingInsights(true)}
-                className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors"
+                style={{ backgroundColor: '#2563eb', color: '#ffffff' }}
               >
                 <Edit2 size={12} />
                 편집
@@ -263,29 +250,26 @@ export const DashboardAnalysis = () => {
             ) : (
               <div className="flex gap-2">
                 <button
-                  onClick={() => {
-                    setEditedInsights(insights);
-                    setIsEditingInsights(false);
-                  }}
-                  className="flex items-center gap-1 px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600 transition-colors"
+                  onClick={() => { setEditedInsights(insights); setIsEditingInsights(false); }}
+                  className="flex items-center gap-1 px-2 py-1 rounded text-xs"
+                  style={{ backgroundColor: '#6b7280', color: '#ffffff' }}
                 >
-                  <X size={12} />
-                  취소
+                  <X size={12} /> 취소
                 </button>
                 <button
                   onClick={handleSaveInsights}
                   disabled={saving}
-                  className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1 px-2 py-1 rounded text-xs disabled:opacity-50"
+                  style={{ backgroundColor: '#16a34a', color: '#ffffff' }}
                 >
-                  <Save size={12} />
-                  {saving ? '저장중...' : '저장'}
+                  <Save size={12} /> {saving ? '저장중...' : '저장'}
                 </button>
               </div>
             )}
           </div>
-          
+
           {loading ? (
-            <div className="text-center py-4 text-gray-500 text-sm">로딩 중...</div>
+            <div className="text-center py-4 text-sm" style={{ color: '#374151' }}>로딩 중...</div>
           ) : isEditingInsights ? (
             <div className="space-y-2">
               {editedInsights.map((insight, index) => (
@@ -293,20 +277,16 @@ export const DashboardAnalysis = () => {
                   <textarea
                     value={insight}
                     onChange={(e) => {
-                      const newInsights = [...editedInsights];
-                      newInsights[index] = e.target.value;
-                      setEditedInsights(newInsights);
+                      const n = [...editedInsights]; n[index] = e.target.value; setEditedInsights(n);
                     }}
-                    className="flex-1 p-2 border border-gray-300 rounded text-sm text-gray-900 bg-white resize-none min-h-[60px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 p-2 border border-gray-300 rounded text-sm bg-white resize-none min-h-[60px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{ color: '#111827' }}
                     placeholder="인사이트를 입력하세요..."
                   />
                   <button
-                    onClick={() => {
-                      const newInsights = editedInsights.filter((_, i) => i !== index);
-                      setEditedInsights(newInsights);
-                    }}
-                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                    title="삭제"
+                    onClick={() => setEditedInsights(editedInsights.filter((_, i) => i !== index))}
+                    className="p-1 hover:bg-red-50 rounded transition-colors"
+                    style={{ color: '#dc2626' }}
                   >
                     <X size={16} />
                   </button>
@@ -314,20 +294,17 @@ export const DashboardAnalysis = () => {
               ))}
               <button
                 onClick={() => setEditedInsights([...editedInsights, ''])}
-                className="w-full py-2 border-2 border-dashed border-gray-300 rounded text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors text-xs flex items-center justify-center gap-2"
+                className="w-full py-2 border-2 border-dashed border-gray-300 rounded text-xs flex items-center justify-center gap-2 hover:border-blue-500"
+                style={{ color: '#374151' }}
               >
-                <Plus size={14} />
-                인사이트 추가
+                <Plus size={14} /> 인사이트 추가
               </button>
             </div>
           ) : (
-            <ul className="space-y-3 text-sm text-gray-800 leading-relaxed">
+            <ul className="space-y-2 text-sm leading-relaxed">
               {insights.map((insight, index) => (
-                <li
-                  key={index}
-                  className="flex gap-2 items-start"
-                >
-                  <span className="text-gray-400 mt-0.5 shrink-0">✓</span>
+                <li key={index} className="flex gap-2 items-start">
+                  <span style={{ color: '#6b7280' }} className="mt-0.5 shrink-0">•</span>
                   <div className="flex-1">{renderText(insight)}</div>
                 </li>
               ))}
@@ -335,114 +312,40 @@ export const DashboardAnalysis = () => {
           )}
         </div>
 
-        {/* Section 2: 2026년 현금흐름표 */}
-        <div>
-          <div className="border-l-4 border-green-600 pl-3 mb-3">
-             <h3 className="text-lg font-bold text-gray-900">2026년 현금흐름표</h3>
-          </div>
-          <div className="space-y-2.5 text-sm text-gray-800 leading-relaxed pl-1">
-            <div>
-              <span className="font-bold text-gray-900 mr-1">영업활동:</span>
-              <span className="text-gray-700">매출 수금 전년비 +3.4% 증가 물품대 전년비 △775M 감소계획 (생산비 △1,175M 감소 + 전년 연체분 +200M 상환)</span>
-            </div>
-            <div>
-              <span className="font-bold text-gray-900 mr-1">자산성지출:</span>
-              <span className="text-gray-700">연간 (38.9M위안) (전년 대비 4.35M위안, +10.1%)</span>
-            </div>
-            <div>
-              <span className="font-bold text-gray-900 mr-1">기타수익:</span>
-              <span className="text-gray-700">연간 68.5M위안 (전년 대비 23.1M위안, +51.0%)</span>
-            </div>
-            <div>
-              <span className="font-bold text-gray-900 mr-1">차입금:</span>
-              <span className="text-gray-700">연간 730M 상환 (vs 전년 409M 순차입)</span>
-            </div>
-            <div>
-              <span className="font-bold text-gray-900 mr-1">net cash:</span>
-              <span className="text-gray-700">연간 (10.8M위안) (전년 대비 24.5M위안, +69.3%)</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 3: 2026년 운전자본표 */}
-        <div>
-          <div className="border-l-4 border-purple-600 pl-3 mb-3">
-             <h3 className="text-lg font-bold text-gray-900">2026년 운전자본표</h3>
-          </div>
-          <div className="space-y-2.5 text-sm text-gray-800 leading-relaxed pl-1">
-            <div>
-              <span className="font-bold text-gray-900 mr-1">매출채권:</span>
-              <span className="text-gray-700">매출채권이 전년 대비 182M위안 감소하여 현금 유입에 기여. 연중 균등하게 개선되어 구조적 변화로 판단.</span>
-            </div>
-            <div>
-              <span className="font-bold text-gray-900 mr-1">재고자산:</span>
-              <span className="text-gray-700">재고자산이 582M위안 감소하여 현금 유입 기여. 연중 균등 감소하여 보수적 재고 운영 정책으로 판단.</span>
-            </div>
-            <div>
-              <span className="font-bold text-gray-900 mr-1">매입채무:</span>
-              <span className="text-gray-700">매입채무가 잔액이 450M위안 감소는 전년 연체 200M 해소 및 재고매입 감소분 반영</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 4: 관리 포인트 */}
-        <div>
-          <div className="border-l-4 border-orange-400 pl-3 mb-3">
-             <h3 className="text-lg font-bold text-gray-900">관리 포인트</h3>
-          </div>
-          <ul className="space-y-3 text-sm text-gray-800 leading-relaxed pl-1">
-            <li className="flex gap-2">
-              <span className="text-gray-400 shrink-0"></span>
-              <span>월별 운전자본 계획대비 실적 모니터링 (출고 계획 진척 및 목표 재고주수 기반 발주 진행)</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-gray-400 shrink-0"></span>
-              <span>재고 수준 적정성 검토: 매출 추세 반영 유동적 재고 매입계획 반영</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-gray-400 shrink-0"></span>
-              <span>선수금 한도 내, 대리상 여신 운영을 통한 재무 안정성 확보</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* Card 2: 주요 변동 내역 (Hidden by default, can be shown if needed) */}
+        {/* Section 2: 주요 변동 내역 */}
         {changes.length > 0 && (
-          <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+          <div className="border-l-4 border-green-500 pl-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-base font-bold text-gray-900">주요 변동 내역</h3>
+              <h3 className="text-base font-bold" style={{ color: '#111827' }}>주요 변동 내역</h3>
               {!isEditingChanges ? (
                 <button
                   onClick={() => setIsEditingChanges(true)}
-                  className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors"
+                  style={{ backgroundColor: '#2563eb', color: '#ffffff' }}
                 >
-                  <Edit2 size={12} />
-                  편집
+                  <Edit2 size={12} /> 편집
                 </button>
               ) : (
                 <div className="flex gap-2">
                   <button
-                    onClick={() => {
-                      setEditedChanges(changes);
-                      setIsEditingChanges(false);
-                    }}
-                    className="flex items-center gap-1 px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600 transition-colors"
+                    onClick={() => { setEditedChanges(changes); setIsEditingChanges(false); }}
+                    className="flex items-center gap-1 px-2 py-1 rounded text-xs"
+                    style={{ backgroundColor: '#6b7280', color: '#ffffff' }}
                   >
-                    <X size={12} />
-                    취소
+                    <X size={12} /> 취소
                   </button>
                   <button
                     onClick={handleSaveChanges}
                     disabled={saving}
-                    className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 px-2 py-1 rounded text-xs disabled:opacity-50"
+                    style={{ backgroundColor: '#16a34a', color: '#ffffff' }}
                   >
-                    <Save size={12} />
-                    {saving ? '저장중...' : '저장'}
+                    <Save size={12} /> {saving ? '저장중...' : '저장'}
                   </button>
                 </div>
               )}
             </div>
-            
+
             {isEditingChanges ? (
               <div className="space-y-3">
                 {editedChanges.map((change, index) => (
@@ -452,19 +355,16 @@ export const DashboardAnalysis = () => {
                         type="text"
                         value={change.title}
                         onChange={(e) => {
-                          const newChanges = [...editedChanges];
-                          newChanges[index].title = e.target.value;
-                          setEditedChanges(newChanges);
+                          const n = [...editedChanges]; n[index].title = e.target.value; setEditedChanges(n);
                         }}
-                        className="flex-1 font-bold text-gray-900 border-b border-gray-300 pb-1 focus:outline-none focus:border-blue-500 bg-white text-sm"
+                        className="flex-1 font-bold border-b border-gray-300 pb-1 focus:outline-none focus:border-blue-500 bg-white text-sm"
+                        style={{ color: '#111827' }}
                         placeholder="제목"
                       />
                       <button
-                        onClick={() => {
-                          const newChanges = editedChanges.filter((_, i) => i !== index);
-                          setEditedChanges(newChanges);
-                        }}
-                        className="ml-2 p-1 text-red-600 hover:bg-red-50 rounded"
+                        onClick={() => setEditedChanges(editedChanges.filter((_, i) => i !== index))}
+                        className="ml-2 p-1 hover:bg-red-50 rounded"
+                        style={{ color: '#dc2626' }}
                       >
                         <X size={14} />
                       </button>
@@ -473,47 +373,43 @@ export const DashboardAnalysis = () => {
                       type="text"
                       value={change.value}
                       onChange={(e) => {
-                        const newChanges = [...editedChanges];
-                        newChanges[index].value = e.target.value;
-                        setEditedChanges(newChanges);
+                        const n = [...editedChanges]; n[index].value = e.target.value; setEditedChanges(n);
                       }}
-                      className="w-full text-xs text-gray-700 mb-1 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 bg-white"
+                      className="w-full text-xs mb-1 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 bg-white"
+                      style={{ color: '#111827' }}
                       placeholder="값"
                     />
                     <input
                       type="text"
                       value={change.description || ''}
                       onChange={(e) => {
-                        const newChanges = [...editedChanges];
-                        newChanges[index].description = e.target.value;
-                        setEditedChanges(newChanges);
+                        const n = [...editedChanges]; n[index].description = e.target.value; setEditedChanges(n);
                       }}
-                      className="w-full text-xs text-gray-600 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 bg-white"
+                      className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 bg-white"
+                      style={{ color: '#111827' }}
                       placeholder="설명 (선택사항)"
                     />
                   </div>
                 ))}
                 <button
-                  onClick={() => {
-                    setEditedChanges([...editedChanges, { title: '', value: '', description: '' }]);
-                  }}
-                  className="w-full py-2 border-2 border-dashed border-gray-300 rounded text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors text-xs flex items-center justify-center gap-2"
+                  onClick={() => setEditedChanges([...editedChanges, { title: '', value: '', description: '' }])}
+                  className="w-full py-2 border-2 border-dashed border-gray-300 rounded text-xs flex items-center justify-center gap-2 hover:border-blue-500"
+                  style={{ color: '#374151' }}
                 >
-                  <Plus size={14} />
-                  항목 추가
+                  <Plus size={14} /> 항목 추가
                 </button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {changes.map((change, index) => (
-                  <div key={index}>
-                    <div className="font-bold text-gray-900 mb-1 text-sm">{change.title}</div>
-                    <div className="text-xs text-gray-700">
-                      {renderText(change.value)}
-                      {change.description && (
-                        <p className="text-xs text-gray-600 mt-1">{change.description}</p>
-                      )}
-                    </div>
+                  <div key={index} className="pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                    <div className="font-bold text-sm mb-1" style={{ color: '#111827' }}>{change.title}</div>
+                    {change.value && (
+                      <div className="text-sm leading-relaxed" style={{ color: '#2563eb' }}>{change.value}</div>
+                    )}
+                    {change.description && (
+                      <p className="text-xs mt-1 leading-relaxed" style={{ color: '#111827' }}>{change.description}</p>
+                    )}
                   </div>
                 ))}
               </div>

@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { ChevronRight, ChevronDown } from 'lucide-react';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,342 +13,239 @@ interface DataTableProps {
   showMonthly?: boolean;
   expandAll?: boolean;
   onExpandAllChange?: (expanded: boolean) => void;
+  headerStyle?: 'dark' | 'light';
 }
 
-interface GroupedRow {
+interface TreeRow {
   id: string;
   data: string[];
-  children: string[][];
-  isHeader: boolean;
+  children: TreeRow[];
+  level: number;
 }
 
-export const DataTable: React.FC<DataTableProps> = ({ headers, rows, title, showMonthly = false, expandAll = false, onExpandAllChange }) => {
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+// ── keyword sets ──────────────────────────────────────────────
+const LEVEL0_PARENTS     = ['영업활동', '재무활동'];
+const LEVEL0_STANDALONE  = ['기초잔액', '기말잔액', 'Net Cash', '운전자본 합계', '매출채권', '재고자산', '매입채무'];
+const LEVEL1_OF_영업     = ['매출수금', '물품대 지출', '비용지출'];
+const LEVEL1_OF_재무     = ['기타수금', '기타지출'];
+const LEVEL2_OF_매출수금 = ['온라인(US+EU)', '홀세일', '라이선스'];
+const LEVEL2_OF_비용지출 = ['인건비', '지급수수료', '광고선전비', '기타비용'];
 
-  // Determine which columns to hide (Jan-Dec if showMonthly is false)
-  const hiddenColumnIndices = useMemo(() => {
-    const indices = new Set<number>();
-    
-    if (!showMonthly) {
-      // Hide columns 1-12 (Jan-Dec, indices 2-13 in 0-based)
-      // Assuming: 계정과목, 2025년(합계), 1월, 2월, ..., 12월, 2026년(합계), YoY
-      for (let i = 2; i <= 13; i++) { // 1월(2) ~ 12월(13)
-        indices.add(i);
-      }
+function buildTree(rows: string[][]): TreeRow[] {
+  const roots: TreeRow[] = [];
+  let l0Parent: TreeRow | null = null;   // 영업활동 / 재무활동
+  let l1Parent: TreeRow | null = null;   // 매출수금 / 비용지출 / …
+
+  rows.forEach((row, index) => {
+    const name = (row[0] || '').trim();
+    const id   = name + '_' + index;
+
+    const isL0Parent    = LEVEL0_PARENTS.some(k => name.includes(k));
+    const isL0Standalone= LEVEL0_STANDALONE.some(k => name.includes(k));
+    const isL1_영업     = LEVEL1_OF_영업.some(k => name.includes(k));
+    const isL1_재무     = LEVEL1_OF_재무.some(k => name.includes(k));
+    const isL2_매출     = LEVEL2_OF_매출수금.some(k => name.includes(k));
+    const isL2_비용     = LEVEL2_OF_비용지출.some(k => name.includes(k));
+
+    if (isL0Standalone) {
+      l0Parent = null; l1Parent = null;
+      roots.push({ id, data: row, children: [], level: 0 });
+
+    } else if (isL0Parent) {
+      l1Parent = null;
+      l0Parent = { id, data: row, children: [], level: 0 };
+      roots.push(l0Parent);
+
+    } else if (isL2_매출 && l1Parent?.data[0]?.includes('매출수금')) {
+      l1Parent.children.push({ id, data: row, children: [], level: 2 });
+
+    } else if (isL2_비용 && l1Parent?.data[0]?.includes('비용지출')) {
+      l1Parent.children.push({ id, data: row, children: [], level: 2 });
+
+    } else if (isL1_영업 && l0Parent?.data[0]?.includes('영업활동')) {
+      l1Parent = { id, data: row, children: [], level: 1 };
+      l0Parent.children.push(l1Parent);
+
+    } else if (isL1_재무 && l0Parent?.data[0]?.includes('재무활동')) {
+      l1Parent = { id, data: row, children: [], level: 1 };
+      l0Parent.children.push(l1Parent);
+
+    } else {
+      // fallback: orphan → root
+      l0Parent = null; l1Parent = null;
+      roots.push({ id, data: row, children: [], level: 0 });
     }
-    
-    return indices;
-  }, [headers, showMonthly]);
+  });
 
-  const getVisibleCells = (row: string[]) => {
-    return row.filter((_, index) => !hiddenColumnIndices.has(index));
-  };
-  
-  const visibleHeaders = headers.filter((_, index) => !hiddenColumnIndices.has(index));
+  return roots;
+}
 
-  // Grouping logic: 기초잔액/기말잔액 are standalone, 영업활동/투자활동/재무활동 are parents
-  const groupedData = useMemo(() => {
-    const groups: GroupedRow[] = [];
-    let currentGroup: GroupedRow | null = null;
+// ── Flatten tree for rendering ────────────────────────────────
+interface FlatRow {
+  node: TreeRow;
+  visible: boolean;
+}
 
-    const parentKeywords = ["영업활동", "투자활동", "재무활동", "매출수금", "비용"];
-    const standaloneKeywords = ["기초잔액", "기말잔액", "운전자본 합계"];
-    const salesCollectionChildren = ["온라인(US+EU)", "홀세일", "라이선스"];
-    const costChildren = ["인건비", "지급수수료", "광고선전비", "기타비용"];
-
-    rows.forEach((row, index) => {
-      const firstCell = row[0] || "";
-      const isParent = parentKeywords.some(k => {
-        if (k === "비용") return firstCell.trim() === "비용";
-        return firstCell.includes(k);
-      });
-      const isStandalone = standaloneKeywords.some(k => firstCell.includes(k));
-      const isSalesCollectionChild = salesCollectionChildren.some(k => firstCell.includes(k));
-      const isCostChild = costChildren.some(k => firstCell.includes(k));
-      
-      if (isStandalone) {
-        // Standalone row (no children) - 기초잔액, 기말잔액
-        currentGroup = null;
-        groups.push({
-          id: firstCell + index,
-          data: row,
-          children: [],
-          isHeader: true
-        });
-      } else if (isParent) {
-        // Start new group - 영업활동, 투자활동, 재무활동, 매출수금
-        currentGroup = {
-          id: firstCell + index,
-          data: row,
-          children: [],
-          isHeader: true
-        };
-        groups.push(currentGroup);
-      } else if (isSalesCollectionChild && currentGroup && currentGroup.data[0]?.includes("매출수금")) {
-        // Child row of 매출수금 - 온라인(US+EU), 홀세일, 라이선스
-        currentGroup.children.push(row);
-      } else if (isCostChild && currentGroup && currentGroup.data[0]?.includes("비용")) {
-        // Child row of 비용 - 인건비, 지급수수료, 광고선전비, 기타비용
-        // 기타비용은 반드시 비용의 자식으로 처리
-        currentGroup.children.push(row);
-      } else if (currentGroup && currentGroup.data[0]?.includes("비용") && !isCostChild) {
-        // 비용 그룹 종료 - 비용 자식이 아닌 항목이 오면 그룹 닫기
-        // 기타(차입상환, STE지분매입), 기타(25년 STE지분매입, 26년 본사차입 상환)은 비용과 같은 레벨의 독립 항목
-        currentGroup = null;
-        const isOtherRepayment = firstCell.includes("기타(차입상환") || firstCell.includes("기타(25년 STE지분매입");
-        groups.push({
-          id: firstCell + index,
-          data: row,
-          children: [],
-          isHeader: isOtherRepayment ? true : false
-        });
-      } else if (currentGroup && currentGroup.data[0]?.includes("매출수금") && !isSalesCollectionChild) {
-        // 매출수금 그룹 종료 - 매출수금 자식이 아닌 항목이 오면 그룹 닫기
-        // STE 배당, 물품대 등은 매출수금과 같은 레벨의 독립 항목 (비용은 부모 그룹이므로 제외)
-        currentGroup = null;
-        const isTopLevelItem = firstCell.includes("STE 배당") || firstCell.includes("물품대");
-        groups.push({
-          id: firstCell + index,
-          data: row,
-          children: [],
-          isHeader: isTopLevelItem ? true : false
-        });
-      } else if (currentGroup && currentGroup.data[0]?.includes("비용") && !isCostChild) {
-        // 비용 그룹 종료 - 비용 자식이 아닌 항목이 오면 그룹 닫기
-        // 기타(차입상환, STE지분매입), 기타(25년 STE지분매입, 26년 본사차입 상환)은 비용과 같은 레벨의 독립 항목
-        currentGroup = null;
-        const isOtherRepayment = firstCell.includes("기타(차입상환") || firstCell.includes("기타(25년 STE지분매입");
-        groups.push({
-          id: firstCell + index,
-          data: row,
-          children: [],
-          isHeader: isOtherRepayment ? true : false
-        });
-      } else if (currentGroup && !currentGroup.data[0]?.includes("매출수금") && !currentGroup.data[0]?.includes("비용")) {
-        // Child row - 영업활동, 투자활동, 재무활동의 하위 항목들
-        currentGroup.children.push(row);
-      } else {
-        // Orphan row (no parent) - 혹시 모를 독립 항목
-        // STE 배당, 물품대, 기타(차입상환, STE지분매입), 기타(25년 STE지분매입, 26년 본사차입 상환) 등은 매출수금/비용과 같은 레벨의 독립 항목
-        currentGroup = null;
-        const isTopLevelItem = firstCell.includes("STE 배당") || firstCell.includes("물품대") || firstCell.includes("기타(차입상환") || firstCell.includes("기타(25년 STE지분매입");
-        groups.push({
-          id: firstCell + index,
-          data: row,
-          children: [],
-          isHeader: isTopLevelItem ? true : false
-        });
+function flattenTree(nodes: TreeRow[], expanded: Record<string, boolean>): FlatRow[] {
+  const result: FlatRow[] = [];
+  function walk(nodes: TreeRow[]) {
+    nodes.forEach(node => {
+      result.push({ node, visible: true });
+      if (node.children.length > 0 && (expanded[node.id] ?? false)) {
+        walk(node.children);
       }
     });
+  }
+  walk(nodes);
+  return result;
+}
 
-    return groups;
-  }, [rows]);
+// ── indent per level ──────────────────────────────────────────
+const INDENT = ['pl-4', 'pl-10', 'pl-16'];
 
-  // When expandAll prop changes, expand/collapse all groups
+export const DataTable: React.FC<DataTableProps> = ({
+  headers,
+  rows,
+  showMonthly = false,
+  expandAll = false,
+  headerStyle = 'dark',
+}) => {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const hiddenCols = useMemo(() => {
+    const s = new Set<number>();
+    if (!showMonthly) for (let i = 2; i <= 13; i++) s.add(i);
+    return s;
+  }, [showMonthly]);
+
+  const visibleHeaders = headers.filter((_, i) => !hiddenCols.has(i));
+  const getVisible = (row: string[]) => row.filter((_, i) => !hiddenCols.has(i));
+
+  const tree = useMemo(() => buildTree(rows), [rows]);
+
+  // init expanded state
   useEffect(() => {
-    const newExpandedGroups: Record<string, boolean> = {};
-    groupedData.forEach((group) => {
-      if (group.children.length > 0) {
-        // 재무활동은 기본적으로 열려있도록 설정
-        const isFinancialActivity = group.data[0]?.includes("재무활동");
-        newExpandedGroups[group.id] = isFinancialActivity ? true : expandAll;
-      }
-    });
-    setExpandedGroups(newExpandedGroups);
-  }, [expandAll, groupedData]);
-
-  const toggleGroup = (id: string) => {
-    setExpandedGroups(prev => ({
-      ...prev,
-      [id]: !(prev[id] ?? false)
-    }));
-  };
-
-  // Format number: convert (123) to -123 display, or keep as is
-  const formatNumber = (value: string): string => {
-    if (!value || value.trim() === '') return '';
-    // If it's already in parentheses format, keep it
-    if (value.includes('(') && value.includes(')')) {
-      return value;
+    const state: Record<string, boolean> = {};
+    function init(nodes: TreeRow[]) {
+      nodes.forEach(n => {
+        if (n.children.length > 0) {
+          state[n.id] = expandAll;
+          init(n.children);
+        }
+      });
     }
-    // If it starts with -, convert to parentheses
-    if (value.startsWith('-')) {
-      return '(' + value.substring(1) + ')';
-    }
-    return value;
-  };
+    init(tree);
+    setExpanded(state);
+  }, [expandAll, tree]);
 
-  // Check if value is negative
-  const isNegative = (value: string): boolean => {
-    return value.includes('(') || value.startsWith('-');
-  };
+  const toggle = (id: string) =>
+    setExpanded(prev => ({ ...prev, [id]: !(prev[id] ?? false) }));
 
-  if (!headers.length) return <div className="p-4 text-gray-500">No data available</div>;
+  const formatNum = (v: string): string => {
+    if (!v || v.trim() === '') return '';
+    if (v.includes('(') && v.includes(')')) return v;
+    if (v.startsWith('-')) return '(' + v.slice(1) + ')';
+    return v;
+  };
+  const isNeg = (v: string) => v.includes('(') || v.startsWith('-');
+
+  const flatRows = useMemo(() => flattenTree(tree, expanded), [tree, expanded]);
+
+  if (!headers.length) return <div className="p-4 text-gray-900">No data available</div>;
+
+  const headerBg   = headerStyle === 'dark' ? '#1e40af' : '#f3f4f6';
+  const headerText = headerStyle === 'dark' ? '#ffffff'  : '#111827';
 
   return (
     <div className="w-full bg-white overflow-hidden">
       <div className="overflow-auto relative">
-        <table className="min-w-full text-sm border-collapse">
-          {/* Header */}
-          <thead className="bg-[#1e40af] sticky top-0 z-20">
+        <table className="min-w-full text-sm border-collapse border border-gray-300">
+
+          {/* ── Header ── */}
+          <thead className="sticky top-0 z-20" style={{ backgroundColor: headerBg }}>
             <tr>
-              {visibleHeaders.map((header, index) => {
-                const isLast = index === visibleHeaders.length - 1;
+              {visibleHeaders.map((h, i) => {
+                const isLast = i === visibleHeaders.length - 1;
                 return (
-                <th
-                  key={index}
-                  className={cn(
-                      "px-4 py-3 font-bold text-white border-b border-blue-800 whitespace-nowrap bg-[#1e40af]",
-                      index === 0 && "sticky left-0 z-30 text-left min-w-[200px] pl-4 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]", 
-                      index !== 0 && !isLast && "text-right font-semibold text-white min-w-[100px]",
-                      isLast && "text-right font-extrabold min-w-[120px] bg-[#1e40af] text-white"
-                  )}
-                >
-                  {header}
-                </th>
+                  <th
+                    key={i}
+                    style={{ backgroundColor: headerBg, color: headerText }}
+                    className={cn(
+                      'px-4 py-3 border font-bold whitespace-nowrap',
+                      headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                      i === 0 && 'sticky left-0 z-30 text-left min-w-[200px] pl-4',
+                      i !== 0 && !isLast && 'text-right min-w-[100px]',
+                      isLast && 'text-right min-w-[120px]',
+                    )}
+                  >
+                    {h}
+                  </th>
                 );
               })}
             </tr>
           </thead>
 
-          {/* Body */}
+          {/* ── Body ── */}
           <tbody className="divide-y divide-gray-100">
-            {groupedData.map((group) => {
-              const isExpanded = expandedGroups[group.id] ?? false; 
-              const hasChildren = group.children.length > 0;
-              const visibleData = getVisibleCells(group.data);
-              const isOtherItem = group.data[0]?.includes("기타(본사차입") || group.data[0]?.includes("기타(차입상환") || group.data[0]?.includes("기타(25년 STE지분매입");
-              const isOtherRepaymentParent = group.data[0]?.includes("기타(차입상환") || group.data[0]?.includes("기타(25년 STE지분매입");
+            {flatRows.map(({ node }) => {
+              const hasChildren = node.children.length > 0;
+              const isOpen      = expanded[node.id] ?? false;
+              const cells       = getVisible(node.data);
+              const isSpecial   =
+                node.data[0]?.includes('기초잔액') ||
+                node.data[0]?.includes('기말잔액') ||
+                node.data[0]?.includes('Net Cash');
+
+              const indent = INDENT[node.level] ?? 'pl-4';
 
               return (
-                <React.Fragment key={group.id}>
-                  {/* Parent Row */}
-                  <tr 
-                    onClick={() => hasChildren && toggleGroup(group.id)}
-                    className={cn(
-                      "group transition-colors",
-                      hasChildren ? "cursor-pointer hover:bg-gray-50" : "hover:bg-gray-50",
-                      // 기타(본사차입, STE 배당등), 기타(차입상환, STE지분매입), 기타(25년 STE지분매입, 26년 본사차입 상환)은 검정색
-                      isOtherItem && "text-gray-900",
-                      // 기타(차입상환, STE지분매입), 기타(25년 STE지분매입, 26년 본사차입 상환)은 볼드체
-                      isOtherRepaymentParent && "font-bold",
-                      // Highlight 기초잔액 and 기말잔액
-                      group.isHeader && (group.data[0]?.includes("기초잔액") || group.data[0]?.includes("기말잔액")) 
-                        ? "font-bold text-gray-900 bg-blue-50" 
-                        : group.isHeader && group.data[0]?.includes("투자활동")
-                        ? "font-bold text-gray-900 bg-white"
-                        : group.isHeader && !isOtherRepaymentParent
-                        ? "font-bold text-gray-900 bg-gray-50" 
-                        : !isOtherRepaymentParent && "font-medium text-gray-900"
-                    )}
-                  >
-                    {visibleData.map((cell, cellIndex) => {
-                      const isLast = cellIndex === visibleData.length - 1;
-                      const cellValue = formatNumber(cell);
-                      const negative = isNegative(cell);
-                      const isBeginningOrEnding = group.data[0]?.includes("기초잔액") || group.data[0]?.includes("기말잔액");
-                      const isInvesting = group.data[0]?.includes("투자활동");
-                      
-                      return (
-                        <td
-                          key={cellIndex}
-                          className={cn(
-                            "px-4 py-3 border-b border-gray-100 whitespace-nowrap",
-                            // First Column
-                            // 기타(본사차입, STE 배당등), 기타(차입상환, STE지분매입)은 검정색 (빨간색 오버라이드)
-                            cellIndex === 0 && isOtherItem && "!text-gray-900",
-                            cellIndex === 0 && "sticky left-0 z-10 text-left flex items-center gap-2 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
-                            cellIndex === 0 && isBeginningOrEnding && "bg-blue-50 group-hover:bg-blue-100",
-                            cellIndex === 0 && isInvesting && "bg-white group-hover:bg-gray-50",
-                            cellIndex === 0 && !isBeginningOrEnding && !isInvesting && "bg-white group-hover:bg-gray-50",
-                            // Middle Columns
-                            cellIndex !== 0 && !isLast && "text-right",
-                            cellIndex !== 0 && !isLast && isBeginningOrEnding && "bg-blue-50",
-                            cellIndex !== 0 && !isLast && isInvesting && "bg-white",
-                            // Last Column (YoY)
-                            isLast && "text-right font-bold",
-                            isLast && isBeginningOrEnding && "bg-blue-50 group-hover:bg-blue-100",
-                            isLast && isInvesting && "bg-white group-hover:bg-gray-100",
-                            isLast && !isBeginningOrEnding && !isInvesting && "bg-gray-50 group-hover:bg-gray-100",
-                            // Negative numbers (첫 번째 열 제외)
-                            negative && cellIndex !== 0 && "text-red-600"
-                          )}
-                        >
-                          {cellIndex === 0 && hasChildren && (
-                            <span className="text-gray-500">
-                              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                            </span>
-                          )}
-                          {cellIndex === 0 && !hasChildren && group.isHeader && (
-                             <span className="w-4 inline-block"></span> 
-                          )}
-                          
-                          {cellValue}
-                        </td>
-                      );
-                    })}
-                  </tr>
+                <tr
+                  key={node.id}
+                  onClick={() => hasChildren && toggle(node.id)}
+                  className={cn(
+                    'group transition-colors',
+                    hasChildren && 'cursor-pointer',
+                    isSpecial ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50',
+                  )}
+                >
+                  {cells.map((cell, ci) => {
+                    const isLast  = ci === cells.length - 1;
+                    const val     = formatNum(cell);
+                    const neg     = ci !== 0 && isNeg(cell);
 
-                  {/* Children Rows */}
-                  {hasChildren && isExpanded && group.children.map((childRow, childIndex) => {
-                    const visibleChildData = getVisibleCells(childRow);
-                    const isBorrowingRow = childRow[0]?.includes("차입금의 변동(본사 차입금)");
-                    const isSTEDividend = childRow[0]?.includes("STE 배당금");
-                    const isOtherItem = childRow[0]?.includes("기타(본사차입") || childRow[0]?.includes("기타(차입상환") || childRow[0]?.includes("기타(25년 STE지분매입");
-                    const isOtherRepayment = childRow[0]?.includes("기타(차입상환") || childRow[0]?.includes("기타(25년 STE지분매입");
-                    const isSalesCollectionChild = childRow[0]?.includes("온라인(US+EU)") || childRow[0]?.includes("홀세일") || childRow[0]?.includes("라이선스");
-                    const isHighlighted = isBorrowingRow || isSTEDividend;
                     return (
-                      <tr 
-                        key={`${group.id}-child-${childIndex}`}
-                className={cn(
-                          "transition-colors",
-                          // 기타(본사차입, STE 배당등), 기타(차입상환, STE지분매입), 매출수금 자식 항목은 검정색
-                          (isOtherItem || isSalesCollectionChild) && "!text-gray-900",
-                          isHighlighted ? "bg-yellow-50 hover:bg-yellow-100" : "hover:bg-gray-50/80"
+                      <td
+                        key={ci}
+                        className={cn(
+                          'px-4 py-3 border border-gray-300 whitespace-nowrap font-bold',
+                          neg ? 'text-red-600' : 'text-gray-900',
+                          // first column
+                          ci === 0 && 'sticky left-0 z-10 text-left shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]',
+                          ci === 0 && indent,
+                          ci === 0 && isSpecial && 'bg-blue-50 group-hover:bg-blue-100',
+                          ci === 0 && !isSpecial && 'bg-white group-hover:bg-gray-50',
+                          // numeric cols
+                          ci !== 0 && !isLast && 'text-right',
+                          // last col (YoY)
+                          isLast && 'text-right',
+                          isLast && isSpecial && 'bg-blue-50 group-hover:bg-blue-100',
+                          isLast && !isSpecial && 'bg-white group-hover:bg-gray-50',
                         )}
                       >
-                        {visibleChildData.map((cell, cellIndex) => {
-                          const isLast = cellIndex === visibleChildData.length - 1;
-                          const cellValue = formatNumber(cell);
-                          const negative = isNegative(cell);
-                  
-                  return (
-                    <td
-                      key={cellIndex}
-                      className={cn(
-                                "px-4 py-2 border-b border-gray-100 whitespace-nowrap",
-                                // First column text color - 기타(본사차입, STE 배당등), 기타(차입상환, STE지분매입), 매출수금 자식 항목은 검정색
-                                cellIndex === 0 && (isOtherItem || isSalesCollectionChild) && "!text-gray-900",
-                                cellIndex === 0 && !isOtherItem && !isSalesCollectionChild && "text-gray-800",
-                                // 기타(차입상환, STE지분매입), 기타(25년 STE지분매입, 26년 본사차입 상환)은 볼드체, 기타비용은 볼드체 해제
-                                cellIndex === 0 && isOtherRepayment && "font-bold",
-                                cellIndex === 0 && !isOtherRepayment && "font-normal",
-                                // Indentation
-                                cellIndex === 0 && "sticky left-0 z-10 text-left pl-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
-                                cellIndex === 0 && isHighlighted && "bg-yellow-50",
-                                cellIndex === 0 && !isHighlighted && "bg-white",
-                                // Middle Columns - 매출수금 자식 항목은 검정색 (음수 제외)
-                                cellIndex !== 0 && !isLast && isSalesCollectionChild && !negative && "!text-gray-900 text-right font-normal",
-                                cellIndex !== 0 && !isLast && !isSalesCollectionChild && "text-right font-normal",
-                                cellIndex !== 0 && !isLast && isHighlighted && "bg-yellow-50",
-                                // Last Column (YoY) - 매출수금 자식 항목은 검정색 (음수 제외)
-                                isLast && isSalesCollectionChild && !negative && "!text-gray-900 text-right font-medium",
-                                isLast && !isSalesCollectionChild && "text-right font-medium text-gray-900",
-                                isLast && isHighlighted && "bg-yellow-50",
-                                isLast && !isHighlighted && "bg-gray-50",
-                                // Negative numbers (첫 번째 열 제외하고 음수는 빨간색)
-                                negative && cellIndex !== 0 && "!text-red-600"
-                              )}
-                            >
-                               {cellValue}
-                    </td>
-                  );
-                })}
-              </tr>
+                        {ci === 0 ? (
+                          <span className="inline-flex items-center gap-1">
+                            {val}
+                            {hasChildren && (
+                              <span className="text-[10px] text-gray-700">
+                                {isOpen ? '▼' : '▶'}
+                              </span>
+                            )}
+                          </span>
+                        ) : val}
+                      </td>
                     );
                   })}
-                </React.Fragment>
+                </tr>
               );
             })}
           </tbody>

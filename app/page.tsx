@@ -64,39 +64,27 @@ export default function Home() {
   };
 
   return (
-    <main className="flex flex-col h-screen bg-white overflow-hidden font-['Pretendard']">
+    <main className="flex flex-col h-screen bg-gray-50 overflow-hidden font-['Pretendard']">
       {/* Header Section */}
-      <header className="px-8 py-5 bg-white border-b border-gray-300 shrink-0">
+      <header className="px-8 py-4 border-b border-blue-900 shrink-0" style={{backgroundColor: '#1e40af'}}>
         <div className="max-w-[1800px] mx-auto w-full">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-              STO 현금흐름표
-            </h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold text-white mr-4">연간 자금계획</h1>
             
-            <div className="flex items-center gap-4">
-              {/* Monthly Toggle */}
-              <button
-                onClick={() => setShowMonthly(!showMonthly)}
-                className="px-4 py-2 rounded text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                월별 데이터 {showMonthly ? "접기" : "펼치기"}
-              </button>
-
-              {/* Refresh */}
-              <button 
-                onClick={() => fetchData()}
-                className="p-2 hover:bg-gray-100 rounded transition-colors text-gray-700 hover:text-gray-900"
-                title="데이터 새로고침"
-              >
-                <RefreshCw size={18} />
-              </button>
-            </div>
+            
+            {/* Monthly Toggle */}
+            <button
+              onClick={() => setShowMonthly(!showMonthly)}
+              className="ml-2 px-4 py-2 bg-blue-800 text-white font-medium rounded hover:bg-blue-700 transition-colors flex items-center gap-1 border border-blue-600"
+            >
+              월별 데이터 {showMonthly ? "접기 ▶" : "펼치기 ▶"}
+            </button>
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 p-8 bg-white overflow-hidden">
+      <div className="flex-1 p-8 bg-gray-50 overflow-hidden">
         <div className="max-w-[1800px] mx-auto w-full h-full">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
@@ -114,25 +102,15 @@ export default function Home() {
               <div className={`${!showMonthly ? 'col-span-7' : 'col-span-12'} overflow-y-auto space-y-6 pr-4 pb-6`}>
                 {/* Cash Flow Table */}
                 {cashflowData && (
-                  <div className="bg-white rounded-lg shadow border border-gray-300 overflow-hidden">
-                    <div className="px-5 py-4 border-b border-gray-300 bg-white flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-lg font-bold text-gray-900">현금흐름표</h2>
-                        <button
-                          onClick={() => toggleTable("cashflow")}
-                          className="px-3 py-1 bg-slate-700 text-white text-sm rounded hover:bg-slate-800 flex items-center gap-1 transition-colors"
-                        >
-                          {expandedTables.cashflow ? "접기 ▲" : "펼치기 ▼"}
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                         {/* Removed expand all specific button to match screenshot simplified look, or keep it if needed. 
-                            Screenshot shows just one button "펼치기 ▼". I will assume this toggles the table visibility (collapse/expand) 
-                            OR it expands all groups. Given the context "펼치기", it usually means expand the section.
-                            However, there is also "expandAllGroups". 
-                            I will keep the main toggle as the "Table Visibility" toggle for now, styled as the dark button.
-                         */}
-                      </div>
+                  <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center gap-3">
+                      <h2 className="text-lg font-bold text-gray-900">현금흐름표</h2>
+                      <button
+                        onClick={() => toggleTable("cashflow")}
+                        className="px-3 py-1 bg-gray-700 text-white text-xs font-bold rounded hover:bg-gray-800 flex items-center gap-1 transition-colors"
+                      >
+                        {expandedTables.cashflow ? "접기 ▼" : "펼치기 ▼"}
+                      </button>
                     </div>
                     {expandedTables.cashflow && (
                       <DataTable 
@@ -141,6 +119,7 @@ export default function Home() {
                         showMonthly={showMonthly}
                         expandAll={expandAllGroups.cashflow}
                         onExpandAllChange={(val) => setExpandAllGroups(prev => ({ ...prev, cashflow: val }))}
+                        headerStyle="dark"
                       />
                     )}
                   </div>
@@ -148,8 +127,8 @@ export default function Home() {
 
                 {/* Cash and Loan Balance Table */}
                 {cashloanData && (
-                  <div className="bg-white rounded-lg shadow border border-gray-300 overflow-hidden">
-                    <div className="px-5 py-4 border-b border-gray-300 bg-white flex items-center justify-between">
+                  <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-200 bg-white">
                       <h2 className="text-lg font-bold text-gray-900">현금잔액과 차입금잔액표</h2>
                     </div>
                     {expandedTables.cashloan && (
@@ -157,7 +136,8 @@ export default function Home() {
                         headers={cashloanData.headers} 
                         rows={cashloanData.rows}
                         showMonthly={showMonthly}
-                        expandAll={true} 
+                        expandAll={true}
+                        headerStyle="dark" 
                       />
                     )}
                   </div>
@@ -165,17 +145,15 @@ export default function Home() {
 
                 {/* Working Capital Table */}
                 {workingCapitalData && (
-                  <div className="bg-white rounded-lg shadow border border-gray-300 overflow-hidden">
-                    <div className="px-5 py-4 border-b border-gray-300 bg-white flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-lg font-bold text-gray-900">운전자본표</h2>
-                        <button
-                          onClick={() => toggleTable("workingcapital")}
-                          className="px-3 py-1 bg-slate-700 text-white text-sm rounded hover:bg-slate-800 flex items-center gap-1 transition-colors"
-                        >
-                          {expandedTables.workingcapital ? "접기 ▲" : "펼치기 ▼"}
-                        </button>
-                      </div>
+                  <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center gap-3">
+                      <h2 className="text-lg font-bold text-gray-900">운전자본표</h2>
+                      <button
+                        onClick={() => toggleTable("workingcapital")}
+                        className="px-3 py-1 bg-gray-700 text-white text-xs font-bold rounded hover:bg-gray-800 flex items-center gap-1 transition-colors"
+                      >
+                        {expandedTables.workingcapital ? "접기 ▼" : "펼치기 ▼"}
+                      </button>
                     </div>
                     {expandedTables.workingcapital && (
                       <DataTable 
@@ -184,6 +162,7 @@ export default function Home() {
                         showMonthly={showMonthly}
                         expandAll={expandAllGroups.workingcapital}
                         onExpandAllChange={(val) => setExpandAllGroups(prev => ({ ...prev, workingcapital: val }))}
+                        headerStyle="dark"
                       />
                     )}
                   </div>
