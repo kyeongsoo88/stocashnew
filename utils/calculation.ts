@@ -252,3 +252,83 @@ export const updateCashloanFromCashflow = (baseCashloan: ParsedData, newCashflow
 
   return { headers: baseCashloan.headers, rows: newRows };
 };
+
+/**
+ * 운전자본표 재계산
+ * 1) 재고자산: 온라인 매출 변동분의 50%만큼 감소 (매출 증가 -> 재고 감소)
+ * 2) 운전자본 합계 = 매출채권 + 재고자산(변경됨) - 매입채무 (모든 컬럼)
+ * 3) 26년(기말) = 12월 값
+ * 4) YoY = 26년(기말) - 25년(기말)
+ */
+export const recalculateWorkingCapital = (
+  baseWcData: ParsedData, 
+  baseCfData: ParsedData, 
+  newCfData: ParsedData
+): ParsedData => {
+  const newRows = baseWcData.rows.map(row => [...row]);
+
+  // WC 행 인덱스
+  const findWcRowIndex = (keyword: string) => newRows.findIndex(row => row[0] && row[0].includes(keyword));
+  const idxReceivable = findWcRowIndex("매출채권");
+  const idxInventory = findWcRowIndex("재고자산");
+  const idxPayable = findWcRowIndex("매입채무");
+  const idxTotal = findWcRowIndex("운전자본 합계");
+
+  // CF 행 인덱스 (온라인 매출 찾기)
+  const findCfRowIndex = (data: ParsedData, keyword: string) => data.rows.findIndex(row => row[0] && row[0].includes(keyword));
+  const idxOnlineBase = findCfRowIndex(baseCfData, "온라인(US+EU)");
+  const idxOnlineNew = findCfRowIndex(newCfData, "온라인(US+EU)");
+
+  if (idxReceivable === -1 || idxInventory === -1 || idxPayable === -1 || idxTotal === -1 || idxOnlineBase === -1 || idxOnlineNew === -1) {
+    return { headers: baseWcData.headers, rows: newRows };
+  }
+
+  // 컬럼 인덱스 (CSV 구조 가정)
+  const col25End = 1;
+  const colJan = 2;
+  const colDec = 13;
+  const col26End = 14;
+  const colYoY = 15;
+
+  // 1. 월별 재계산 (25년기말 ~ 12월)
+  for (let col = col25End; col <= colDec; col++) {
+    // 1-1. 재고자산 재계산 (매출 변동 반영)
+    // 25년기말(col=1)은 매출 변동과 무관하므로 패스하거나 델타 0 처리
+    let inventoryDelta = 0;
+    
+    // 1월(2)부터 12월(13)까지만 매출 비교
+    if (col >= colJan && col <= colDec) {
+      const baseOnline = parseNumber(baseCfData.rows[idxOnlineBase][col]);
+      const newOnline = parseNumber(newCfData.rows[idxOnlineNew][col]);
+      const revenueDelta = newOnline - baseOnline;
+      
+      // 매출 증가분의 50%만큼 재고 감소
+      inventoryDelta = -(revenueDelta * 0.50);
+    }
+
+    const baseInventory = parseNumber(baseWcData.rows[idxInventory][col]);
+    const newInventory = baseInventory + inventoryDelta;
+    newRows[idxInventory][col] = formatNumber(newInventory);
+
+    // 1-2. 운전자본 합계 재계산
+    const receivable = parseNumber(newRows[idxReceivable][col]); // 매출채권 (고정)
+    // newInventory 사용 (위에서 업데이트됨)
+    const payable = parseNumber(newRows[idxPayable][col]); // 매입채무 (고정)
+
+    const total = receivable + newInventory - payable;
+    newRows[idxTotal][col] = formatNumber(total);
+  }
+
+  // 2. 모든 행에 대해 26년(기말) 및 YoY 업데이트
+  newRows.forEach(row => {
+    // 26년(기말) = 12월 값
+    row[col26End] = row[colDec];
+
+    // YoY = 26년(기말) - 25년(기말)
+    const val26 = parseNumber(row[col26End]);
+    const val25 = parseNumber(row[col25End]);
+    row[colYoY] = formatNumber(val26 - val25);
+  });
+
+  return { headers: baseWcData.headers, rows: newRows };
+};

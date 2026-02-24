@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { fetchAndParseCsv, ParsedData } from "@/utils/csv";
-import { recalculateCashflow, updateCashloanFromCashflow } from "@/utils/calculation";
+import { recalculateCashflow, updateCashloanFromCashflow, recalculateWorkingCapital } from "@/utils/calculation";
 import { DataTable } from "@/components/DataTable";
 import { DashboardAnalysis } from "@/components/DashboardAnalysis";
 import { 
@@ -13,6 +13,7 @@ export default function Home() {
   // Base data (130% standard) loaded from CSV
   const [baseCashflowData, setBaseCashflowData] = useState<ParsedData | null>(null);
   const [baseCashloanData, setBaseCashloanData] = useState<ParsedData | null>(null);
+  const [baseWorkingCapitalData, setBaseWorkingCapitalData] = useState<ParsedData | null>(null);
   
   // Displayed data (recalculated based on growth rate)
   const [cashflowData, setCashflowData] = useState<ParsedData | null>(null);
@@ -51,11 +52,14 @@ export default function Home() {
       
       setBaseCashflowData(cfResult);
       setBaseCashloanData(clResult); // Save base cashloan data
+      setBaseWorkingCapitalData(wcResult); // Save base working capital data
 
-      // Initialize with base data (130%)
+      // Initialize with base data (130%) & initial recalculations
       setCashflowData(cfResult);
       setCashloanData(clResult);
-      setWorkingCapitalData(wcResult);
+      // 운전자본표 합계 초기 재계산 (매출 변동 없음 -> 델타 0)
+      setWorkingCapitalData(recalculateWorkingCapital(wcResult, cfResult, cfResult));
+      
       setLastUpdated(new Date());
     } catch (err) {
       console.error(err);
@@ -82,8 +86,14 @@ export default function Home() {
         const updatedCL = updateCashloanFromCashflow(baseCashloanData, recalculatedCF);
         setCashloanData(updatedCL);
       }
+
+      // 3. Recalculate Working Capital (매출 변동에 따른 재고 감소 + 합계 재계산)
+      if (baseWorkingCapitalData) {
+        const updatedWC = recalculateWorkingCapital(baseWorkingCapitalData, baseCashflowData, recalculatedCF);
+        setWorkingCapitalData(updatedWC);
+      }
     }
-  }, [growthRate, baseCashflowData, baseCashloanData]);
+  }, [growthRate, baseCashflowData, baseCashloanData, baseWorkingCapitalData]);
 
   const toggleTable = (tableId: string) => {
     setExpandedTables(prev => ({
