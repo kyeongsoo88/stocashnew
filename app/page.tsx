@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { fetchAndParseCsv, ParsedData } from "@/utils/csv";
 import { DataTable } from "@/components/DataTable";
 import { DashboardAnalysis } from "@/components/DashboardAnalysis";
@@ -31,22 +32,48 @@ export default function Home() {
     cashloan: false,
     workingcapital: false,
   });
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const dropdownMenuRef = useRef<HTMLDivElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 
-  // Close dropdown when clicking outside
+  const closeGrowthDropdown = () => {
+    setShowGrowthDropdown(false);
+    setDropdownPosition(null);
+  };
+
+  // Close dropdown when clicking outside (trigger 또는 드롭다운 패널 밖)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowGrowthDropdown(false);
+      const target = event.target as Node;
+      if (
+        !triggerRef.current?.contains(target) &&
+        !dropdownMenuRef.current?.contains(target)
+      ) {
+        closeGrowthDropdown();
       }
     };
 
     if (showGrowthDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showGrowthDropdown]);
 
+  // 드롭다운 열릴 때 위치 계산 + 스크롤/리사이즈 시 위치 갱신
+  useEffect(() => {
+    if (!showGrowthDropdown || !triggerRef.current) return;
+    const updatePosition = () => {
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setDropdownPosition({ top: rect.bottom + 4, left: rect.left });
+      }
+    };
+    updatePosition();
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
     };
   }, [showGrowthDropdown]);
 
@@ -87,7 +114,13 @@ export default function Home() {
 
   const handleGrowthRateChange = (rate: GrowthRate) => {
     setGrowthRate(rate);
-    setShowGrowthDropdown(false);
+    closeGrowthDropdown();
+  };
+
+  const openGrowthDropdown = () => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) setDropdownPosition({ top: rect.bottom + 4, left: rect.left });
+    setShowGrowthDropdown(true);
   };
 
   const growthRateLabels: Record<GrowthRate, string> = {
@@ -98,63 +131,70 @@ export default function Home() {
 
   return (
     <main className="flex flex-col h-screen bg-gray-50 overflow-hidden font-['Pretendard']">
-      {/* Header Section */}
-      <header className="px-8 py-4 border-b border-blue-900 shrink-0 overflow-visible relative z-50 h-[74px] flex items-center" style={{backgroundColor: '#3b5998'}}>
-        <div className="max-w-[1800px] mx-auto w-full">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-white mr-4">연간 자금계획</h1>
-            
-            {/* Monthly Toggle */}
+      {/* Header Section - 높이 고정. 드롭다운은 Portal로 body에 그려져 바와 무관 */}
+      <header className="px-8 py-4 border-b border-blue-900 shrink-0 h-[74px] flex items-center overflow-hidden" style={{ backgroundColor: "#3b5998" }}>
+        <div className="max-w-[1800px] mx-auto w-full flex items-center">
+          <div className="flex items-center gap-4 flex-shrink-0">
+            <h1 className="text-xl font-bold text-white mr-4 whitespace-nowrap">연간 자금계획</h1>
+
             <button
               onClick={() => setShowMonthly(!showMonthly)}
-              className="px-4 py-2 bg-blue-800 text-white font-medium rounded hover:bg-blue-700 transition-colors flex items-center gap-1 border border-blue-600"
+              className="px-4 py-2 bg-blue-800 text-white font-medium rounded hover:bg-blue-700 transition-colors flex items-center gap-1 border border-blue-600 whitespace-nowrap"
             >
               월별 데이터 {showMonthly ? "접기 ▶" : "펼치기 ▶"}
             </button>
 
-            {/* Growth Rate Dropdown - Select Box Style */}
-            <div className="relative" ref={dropdownRef}>
+            {/* 성장률 트리거만 헤더 안에. 드롭다운은 Portal로 body에 렌더 */}
+            <div className="flex-shrink-0" ref={triggerRef}>
               <button
-                onClick={() => setShowGrowthDropdown(!showGrowthDropdown)}
+                onClick={() => (showGrowthDropdown ? closeGrowthDropdown() : openGrowthDropdown())}
                 className="px-4 py-2 bg-white border border-gray-300 rounded flex items-center justify-between gap-3 min-w-[140px] hover:border-gray-400 transition-colors"
               >
-                <span style={{ color: '#111827' }} className="font-medium text-sm">{growthRate}% 성장</span>
-                <ChevronDown size={16} style={{ color: '#6b7280' }} className={`transition-transform ${showGrowthDropdown ? 'rotate-180' : ''}`} />
+                <span style={{ color: "#111827" }} className="font-medium text-sm">{growthRate}% 성장</span>
+                <ChevronDown size={16} style={{ color: "#6b7280" }} className={`transition-transform ${showGrowthDropdown ? "rotate-180" : ""}`} />
               </button>
-              
-              {/* Dropdown Menu - absolute position directly below button */}
-              {showGrowthDropdown && (
-                <div 
-                  className="absolute top-full left-0 mt-2 rounded-md border border-gray-200 shadow-xl py-1 min-w-full overflow-hidden"
-                  style={{ 
-                    zIndex: 9999, 
-                    backgroundColor: '#ffffff'
-                  }}
-                >
-                  {(['100', '130', '150'] as GrowthRate[]).map((rate) => (
-                    <button
-                      key={rate}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleGrowthRateChange(rate);
-                      }}
-                      style={{ color: '#111827', backgroundColor: '#ffffff' }}
-                      className="w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-gray-50 flex items-center justify-between whitespace-nowrap font-medium"
-                    >
-                      <span>{rate}% 성장</span>
-                      {growthRate === rate && (
-                        <svg className="w-4 h-4 text-blue-600 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>
       </header>
+
+      {/* 드롭다운 메뉴: body에 Portal로 렌더 → 연간 자금계획 바 높이에 영향 없음 */}
+      {showGrowthDropdown &&
+        dropdownPosition &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={dropdownMenuRef}
+            className="rounded-md border border-gray-200 shadow-xl py-1 overflow-hidden min-w-[140px]"
+            style={{
+              position: "fixed",
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              zIndex: 99999,
+              backgroundColor: "#ffffff",
+            }}
+          >
+            {(["100", "130", "150"] as GrowthRate[]).map((rate) => (
+              <button
+                key={rate}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleGrowthRateChange(rate);
+                }}
+                style={{ color: "#111827", backgroundColor: "#ffffff" }}
+                className="w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-gray-50 flex items-center justify-between whitespace-nowrap font-medium"
+              >
+                <span>{rate}% 성장</span>
+                {growthRate === rate && (
+                  <svg className="w-4 h-4 text-blue-600 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>,
+          document.body
+        )}
 
       {/* Main Content Area */}
       <div className="flex-1 p-8 bg-gray-50 overflow-hidden">
