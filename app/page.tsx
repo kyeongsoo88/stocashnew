@@ -1,27 +1,32 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useState, useMemo } from "react";
 import { fetchAndParseCsv, ParsedData } from "@/utils/csv";
+import { recalculateCashflow, updateCashloanFromCashflow } from "@/utils/calculation";
 import { DataTable } from "@/components/DataTable";
 import { DashboardAnalysis } from "@/components/DashboardAnalysis";
 import { 
   Loader2, 
-  ChevronDown,
 } from "lucide-react";
 
-type GrowthRate = '100' | '130' | '150';
-
 export default function Home() {
+  // Base data (130% standard) loaded from CSV
+  const [baseCashflowData, setBaseCashflowData] = useState<ParsedData | null>(null);
+  const [baseCashloanData, setBaseCashloanData] = useState<ParsedData | null>(null);
+  
+  // Displayed data (recalculated based on growth rate)
   const [cashflowData, setCashflowData] = useState<ParsedData | null>(null);
   const [cashloanData, setCashloanData] = useState<ParsedData | null>(null);
   const [workingCapitalData, setWorkingCapitalData] = useState<ParsedData | null>(null);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [showMonthly, setShowMonthly] = useState(false);
-  const [growthRate, setGrowthRate] = useState<GrowthRate>('130');
-  const [showGrowthDropdown, setShowGrowthDropdown] = useState(false);
+  
+  // Growth Rate State (Number, 100-200)
+  const [growthRate, setGrowthRate] = useState<number>(130);
+  
   const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>({
     cashflow: true,
     cashloan: true,
@@ -32,63 +37,22 @@ export default function Home() {
     cashloan: false,
     workingcapital: false,
   });
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const dropdownMenuRef = useRef<HTMLDivElement>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 
-  const closeGrowthDropdown = () => {
-    setShowGrowthDropdown(false);
-    setDropdownPosition(null);
-  };
-
-  // Close dropdown when clicking outside (trigger 또는 드롭다운 패널 밖)
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        !triggerRef.current?.contains(target) &&
-        !dropdownMenuRef.current?.contains(target)
-      ) {
-        closeGrowthDropdown();
-      }
-    };
-
-    if (showGrowthDropdown) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showGrowthDropdown]);
-
-  // 드롭다운 열릴 때 위치 계산 + 스크롤/리사이즈 시 위치 갱신
-  useEffect(() => {
-    if (!showGrowthDropdown || !triggerRef.current) return;
-    const updatePosition = () => {
-      if (triggerRef.current) {
-        const rect = triggerRef.current.getBoundingClientRect();
-        setDropdownPosition({ top: rect.bottom + 4, left: rect.left });
-      }
-    };
-    updatePosition();
-    window.addEventListener("scroll", updatePosition, true);
-    window.addEventListener("resize", updatePosition);
-    return () => {
-      window.removeEventListener("scroll", updatePosition, true);
-      window.removeEventListener("resize", updatePosition);
-    };
-  }, [showGrowthDropdown]);
-
-  const fetchData = async (rate: GrowthRate) => {
+  const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      // 130%는 기본 파일, 100%와 150%는 별도 파일
-      const suffix = rate === '130' ? '' : rate;
+      // Load only the base files (standard 130% data)
       const [cfResult, clResult, wcResult] = await Promise.all([
-        fetchAndParseCsv(`/data/cashflow${suffix}.csv`),
-        fetchAndParseCsv(`/data/cashloan${suffix}.csv`),
-        fetchAndParseCsv(`/data/workingcapital${suffix}.csv`),
+        fetchAndParseCsv(`/data/cashflow.csv`),
+        fetchAndParseCsv(`/data/cashloan.csv`),
+        fetchAndParseCsv(`/data/workingcapital.csv`),
       ]);
       
+      setBaseCashflowData(cfResult);
+      setBaseCashloanData(clResult); // Save base cashloan data
+
+      // Initialize with base data (130%)
       setCashflowData(cfResult);
       setCashloanData(clResult);
       setWorkingCapitalData(wcResult);
@@ -101,9 +65,25 @@ export default function Home() {
     }
   };
 
+  // Initial load
   useEffect(() => {
-    fetchData(growthRate);
-  }, [growthRate]);
+    fetchData();
+  }, []);
+
+  // Recalculate when growthRate changes
+  useEffect(() => {
+    if (baseCashflowData) {
+      // 1. Recalculate Cash Flow
+      const recalculatedCF = recalculateCashflow(baseCashflowData, growthRate);
+      setCashflowData(recalculatedCF);
+
+      // 2. Update Cash Loan Balance using recalculated Cash Flow
+      if (baseCashloanData) {
+        const updatedCL = updateCashloanFromCashflow(baseCashloanData, recalculatedCF);
+        setCashloanData(updatedCL);
+      }
+    }
+  }, [growthRate, baseCashflowData, baseCashloanData]);
 
   const toggleTable = (tableId: string) => {
     setExpandedTables(prev => ({
@@ -112,22 +92,11 @@ export default function Home() {
     }));
   };
 
-  const handleGrowthRateChange = (rate: GrowthRate) => {
+  const handleGrowthRateChange = (rate: number) => {
     setGrowthRate(rate);
-    closeGrowthDropdown();
   };
 
-  const openGrowthDropdown = () => {
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (rect) setDropdownPosition({ top: rect.bottom + 4, left: rect.left });
-    setShowGrowthDropdown(true);
-  };
 
-  const growthRateLabels: Record<GrowthRate, string> = {
-    '100': '100% (전년 동일)',
-    '130': '130% (기본)',
-    '150': '150% (고성장)',
-  };
 
   return (
     <main className="flex flex-col h-screen bg-gray-50 overflow-hidden font-['Pretendard']">
@@ -144,57 +113,29 @@ export default function Home() {
               월별 데이터 {showMonthly ? "접기 ▶" : "펼치기 ▶"}
             </button>
 
-            {/* 성장률 트리거만 헤더 안에. 드롭다운은 Portal로 body에 렌더 */}
-            <div className="flex-shrink-0" ref={triggerRef}>
-              <button
-                onClick={() => (showGrowthDropdown ? closeGrowthDropdown() : openGrowthDropdown())}
-                className="px-4 py-2 bg-white border border-gray-300 rounded flex items-center justify-between gap-3 min-w-[140px] hover:border-gray-400 transition-colors"
-              >
-                <span style={{ color: "#111827" }} className="font-medium text-sm">{growthRate}% 성장</span>
-                <ChevronDown size={16} style={{ color: "#6b7280" }} className={`transition-transform ${showGrowthDropdown ? "rotate-180" : ""}`} />
-              </button>
+            {/* Growth Rate Slider - Embedded in Header */}
+            <div className="flex items-center gap-3 ml-4 bg-blue-800/50 px-4 py-1.5 rounded-lg border border-blue-700">
+              <span className="text-white text-sm font-medium whitespace-nowrap">성장률 설정</span>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-blue-200 text-xs">100%</span>
+                <input
+                  type="range"
+                  min="100"
+                  max="200"
+                  step="1"
+                  value={growthRate}
+                  onChange={(e) => handleGrowthRateChange(Number(e.target.value))}
+                  className="w-[150px] h-2 bg-blue-900 rounded-lg appearance-none cursor-pointer accent-white"
+                />
+                <span className="text-blue-200 text-xs">200%</span>
+              </div>
+              
+              <span className="text-white font-bold text-lg min-w-[50px] text-right">{growthRate}%</span>
             </div>
           </div>
         </div>
       </header>
-
-      {/* 드롭다운 메뉴: body에 Portal로 렌더 → 연간 자금계획 바 높이에 영향 없음 */}
-      {showGrowthDropdown &&
-        dropdownPosition &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            ref={dropdownMenuRef}
-            className="rounded-md border border-gray-200 shadow-xl py-1 overflow-hidden min-w-[140px]"
-            style={{
-              position: "fixed",
-              top: dropdownPosition.top,
-              left: dropdownPosition.left,
-              zIndex: 99999,
-              backgroundColor: "#ffffff",
-            }}
-          >
-            {(["100", "130", "150"] as GrowthRate[]).map((rate) => (
-              <button
-                key={rate}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleGrowthRateChange(rate);
-                }}
-                style={{ color: "#111827", backgroundColor: "#ffffff" }}
-                className="w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-gray-50 flex items-center justify-between whitespace-nowrap font-medium"
-              >
-                <span>{rate}% 성장</span>
-                {growthRate === rate && (
-                  <svg className="w-4 h-4 text-blue-600 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </button>
-            ))}
-          </div>,
-          document.body
-        )}
 
       {/* Main Content Area */}
       <div className="flex-1 p-8 bg-gray-50 overflow-hidden">
@@ -216,6 +157,7 @@ export default function Home() {
                 {/* Cash Flow Table */}
                 {cashflowData && (
                   <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+
                     <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center gap-3">
                       <h2 className="text-lg font-bold text-gray-900">현금흐름표</h2>
                       <span className="text-sm text-blue-600 font-medium">(매출 {growthRate}% 가정)</span>
