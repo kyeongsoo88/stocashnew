@@ -25,7 +25,7 @@ export const recalculateCashflow = (baseData: ParsedData, targetRate: number): P
   // 행 인덱스 찾기 (CSV 파일 구조에 의존)
   const findRowIndex = (keyword: string) => newRows.findIndex(row => row[0] && row[0].includes(keyword));
 
-  const rowIdx = {
+    const rowIdx = {
     beginning: findRowIndex("기초잔액"),
     operating: findRowIndex("영업활동"),
     salesTotal: findRowIndex("매출수금"),
@@ -33,7 +33,11 @@ export const recalculateCashflow = (baseData: ParsedData, targetRate: number): P
     wholesale: findRowIndex("홀세일"),
     license: findRowIndex("라이선스"),
     goods: findRowIndex("물품대 지출"),
-    expenses: findRowIndex("비용지출"), // 이 행이 전체 비용 합계라고 가정
+    expenses: findRowIndex("비용지출"), // 전체 비용 합계
+    labor: findRowIndex("인건비"),
+    commission: findRowIndex("지급수수료"),
+    ad: findRowIndex("광고선전비"),
+    otherExp: findRowIndex("기타비용"),
     finance: findRowIndex("재무활동"),
     otherIn: findRowIndex("기타수금"),
     otherOut: findRowIndex("기타지출"),
@@ -73,16 +77,56 @@ export const recalculateCashflow = (baseData: ParsedData, targetRate: number): P
     const newOnline = baseOnline * currentRatio;
     newRows[rowIdx.online][col] = formatNumber(newOnline);
 
-    // 3. 매출수금 합계 재계산 (온라인 + 홀세일 + 라이선스)
+    // 매출 증가분 계산 (Actual 기간은 0)
+    const revenueDelta = newOnline - baseOnline;
+
+    // 3. 비용지출 항목별 재계산 (매출 증가분에 따른 변동비 반영)
+    // 광고선전비: 매출증가분 * 20% 추가 지출 (음수이므로 빼줌)
+    if (rowIdx.ad !== -1) {
+      const baseAd = parseNumber(baseData.rows[rowIdx.ad][col]);
+      const newAd = baseAd - (revenueDelta * 0.20);
+      newRows[rowIdx.ad][col] = formatNumber(newAd);
+    }
+    // 지급수수료: 매출증가분 * 10% 추가 지출 (음수이므로 빼줌)
+    if (rowIdx.commission !== -1) {
+      const baseComm = parseNumber(baseData.rows[rowIdx.commission][col]);
+      const newComm = baseComm - (revenueDelta * 0.10);
+      newRows[rowIdx.commission][col] = formatNumber(newComm);
+    }
+
+    // 4. 비용지출 합계 재계산 (인건비 + 수수료 + 광고 + 기타)
+    // 기존 합계 행이 있으면 업데이트, 없으면 개별 합산
+    let newExpensesTotal = 0;
+    if (rowIdx.expenses !== -1) {
+      // 기존 합계에서 변동분(광고+수수료)만 반영
+      const baseExpensesTotal = parseNumber(baseData.rows[rowIdx.expenses][col]);
+      // 변동분 = (newAd - baseAd) + (newComm - baseComm) = -revenueDelta * 0.3
+      const expenseDelta = -(revenueDelta * 0.30);
+      newExpensesTotal = baseExpensesTotal + expenseDelta;
+      newRows[rowIdx.expenses][col] = formatNumber(newExpensesTotal);
+    } else {
+      // 합계 행이 없으면 개별 항목 다 더해서 계산 (인건비, 기타비용은 고정 가정)
+      const labor = rowIdx.labor !== -1 ? parseNumber(newRows[rowIdx.labor][col]) : 0; // newRows 사용 (이미 파싱된 값 없으므로 원본 써야 함. 아님 baseData?)
+      // 인건비는 변동 없으므로 baseData 사용
+      const baseLabor = rowIdx.labor !== -1 ? parseNumber(baseData.rows[rowIdx.labor][col]) : 0;
+      const baseOtherExp = rowIdx.otherExp !== -1 ? parseNumber(baseData.rows[rowIdx.otherExp][col]) : 0;
+      
+      const currentAd = rowIdx.ad !== -1 ? parseNumber(newRows[rowIdx.ad][col]) : 0;
+      const currentComm = rowIdx.commission !== -1 ? parseNumber(newRows[rowIdx.commission][col]) : 0;
+      
+      newExpensesTotal = baseLabor + currentComm + currentAd + baseOtherExp;
+    }
+
+    // 5. 매출수금 합계 재계산 (온라인 + 홀세일 + 라이선스)
     const wholesale = rowIdx.wholesale !== -1 ? parseNumber(newRows[rowIdx.wholesale][col]) : 0;
     const license = rowIdx.license !== -1 ? parseNumber(newRows[rowIdx.license][col]) : 0;
     const newSalesTotal = newOnline + wholesale + license;
     newRows[rowIdx.salesTotal][col] = formatNumber(newSalesTotal);
 
-    // 4. 영업활동 재계산 (매출수금 + 물품대 + 비용지출)
+    // 6. 영업활동 재계산 (매출수금 + 물품대 + 비용지출)
     const goods = rowIdx.goods !== -1 ? parseNumber(newRows[rowIdx.goods][col]) : 0;
-    const expenses = rowIdx.expenses !== -1 ? parseNumber(newRows[rowIdx.expenses][col]) : 0;
-    const newOperating = newSalesTotal + goods + expenses;
+    // 위에서 계산한 newExpensesTotal 사용
+    const newOperating = newSalesTotal + goods + newExpensesTotal;
     if (rowIdx.operating !== -1) {
       newRows[rowIdx.operating][col] = formatNumber(newOperating);
     }
@@ -114,23 +158,43 @@ export const recalculateCashflow = (baseData: ParsedData, targetRate: number): P
     }
   }
 
-  // 합계(26년 합계) 컬럼 업데이트 (인덱스 14 가정)
+  // 합계(26년 합계) 및 YoY 컬럼 업데이트 (모든 행 적용)
   const sumCol = 14;
-  if (newRows[0][sumCol] && newRows[0][sumCol].includes("합계")) {
-      [rowIdx.online, rowIdx.salesTotal, rowIdx.operating, rowIdx.netCash, rowIdx.ending].forEach(idx => {
-          if (idx !== -1) {
-              if (idx === rowIdx.ending) {
-                  // 기말잔액 합계는 12월 기말잔액
-                  newRows[idx][sumCol] = newRows[idx][endCol];
-              } else {
-                  let sum = 0;
-                  for (let c = startCol; c <= endCol; c++) {
-                      sum += parseNumber(newRows[idx][c]);
-                  }
-                  newRows[idx][sumCol] = formatNumber(sum);
-              }
-          }
-      });
+  const col25 = 1;
+  const colYoY = 15;
+
+  // 헤더 확인
+  const hasSumCol = baseData.headers[sumCol] && baseData.headers[sumCol].includes("합계");
+  const hasYoYCol = baseData.headers[colYoY] && baseData.headers[colYoY].includes("YoY");
+  const has25Col = baseData.headers[col25] && baseData.headers[col25].includes("25년");
+
+  if (hasSumCol) {
+    newRows.forEach((row, idx) => {
+      const name = row[0] || "";
+      
+      // 1. 26년 합계 계산
+      if (name.includes("기초잔액")) {
+        // 기초잔액 합계는 '1월 기초잔액'으로 고정
+        row[sumCol] = row[startCol];
+      } else if (name.includes("잔액")) {
+        // 그 외 잔액(기말잔액, 차입금잔액 등)은 '12월 기말잔액'
+        row[sumCol] = row[endCol];
+      } else {
+        // 나머지(매출, 비용, 영업활동 등)는 1~12월 단순 합계
+        let sum = 0;
+        for (let c = startCol; c <= endCol; c++) {
+          sum += parseNumber(row[c]);
+        }
+        row[sumCol] = formatNumber(sum);
+      }
+
+      // 2. YoY 컬럼 업데이트 (YoY = 26년 합계 - 25년 합계)
+      if (hasYoYCol && has25Col) {
+        const val26 = parseNumber(row[sumCol]);
+        const val25 = parseNumber(row[col25]);
+        row[colYoY] = formatNumber(val26 - val25);
+      }
+    });
   }
 
   return { headers: baseData.headers, rows: newRows };
@@ -174,6 +238,17 @@ export const updateCashloanFromCashflow = (baseCashloan: ParsedData, newCashflow
 
   // 3. 전체 기말잔액 (Col 14) -> 12월 기말잔액과 동일
   newRows[cashBalanceIdx][14] = newCashflow.rows[cfEndingIdx][13];
+
+  // 4. YoY 업데이트 (Col 15)
+  // 25년 합계(Col 1), 26년 합계(Col 14), YoY(Col 15) 가정
+  const col25 = 1;
+  const colYoY = 15;
+  // 헤더 확인은 baseCashloan.headers 이용
+  if (baseCashloan.headers[colYoY] && baseCashloan.headers[colYoY].includes("YoY")) {
+      const val26 = parseNumber(newRows[cashBalanceIdx][14]);
+      const val25 = parseNumber(newRows[cashBalanceIdx][col25]);
+      newRows[cashBalanceIdx][colYoY] = formatNumber(val26 - val25);
+  }
 
   return { headers: baseCashloan.headers, rows: newRows };
 };

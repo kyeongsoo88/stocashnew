@@ -123,25 +123,33 @@ export const DataTable: React.FC<DataTableProps> = ({
 
   const tree = useMemo(() => buildTree(rows), [rows]);
 
-  // init expanded state - 기본값: 영업활동, 매출수금만 펼침
+  // init expanded state - 기존 상태 유지하면서, 새로운 항목만 기본값 적용 (최적화)
   useEffect(() => {
-    const state: Record<string, boolean> = {};
-    function init(nodes: TreeRow[]) {
-      nodes.forEach(n => {
-        if (n.children.length > 0) {
-          const name = n.data[0] || '';
-          // 영업활동, 매출수금만 펼침 / 비용지출, 재무활동은 접힘
-          if (name.includes('영업활동') || name.includes('매출수금')) {
-            state[n.id] = true;
-          } else {
-            state[n.id] = false;
+    setExpanded(prev => {
+      let changed = false;
+      const next = { ...prev };
+      
+      function init(nodes: TreeRow[]) {
+        nodes.forEach(n => {
+          if (n.children.length > 0) {
+            // 이미 상태가 있으면 유지, 없으면 기본값 설정
+            if (next[n.id] === undefined) {
+              changed = true;
+              const name = n.data[0] || '';
+              // 영업활동, 매출수금만 펼침 / 비용지출, 재무활동은 접힘
+              if (name.includes('영업활동') || name.includes('매출수금')) {
+                next[n.id] = true;
+              } else {
+                next[n.id] = false;
+              }
+            }
+            init(n.children);
           }
-          init(n.children);
-        }
-      });
-    }
-    init(tree);
-    setExpanded(state);
+        });
+      }
+      init(tree);
+      return changed ? next : prev;
+    });
   }, [tree]);
 
   const toggle = (id: string) =>
