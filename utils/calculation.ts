@@ -87,10 +87,10 @@ export const recalculateCashflow = (baseData: ParsedData, targetRate: number): P
       const newAd = baseAd - (revenueDelta * 0.20);
       newRows[rowIdx.ad][col] = formatNumber(newAd);
     }
-    // 지급수수료: 매출증가분 * 10% 추가 지출 (음수이므로 빼줌)
+    // 지급수수료: 매출증가분 * 30% 추가 지출 (음수이므로 빼줌)
     if (rowIdx.commission !== -1) {
       const baseComm = parseNumber(baseData.rows[rowIdx.commission][col]);
-      const newComm = baseComm - (revenueDelta * 0.10);
+      const newComm = baseComm - (revenueDelta * 0.30);
       newRows[rowIdx.commission][col] = formatNumber(newComm);
     }
 
@@ -100,8 +100,8 @@ export const recalculateCashflow = (baseData: ParsedData, targetRate: number): P
     if (rowIdx.expenses !== -1) {
       // 기존 합계에서 변동분(광고+수수료)만 반영
       const baseExpensesTotal = parseNumber(baseData.rows[rowIdx.expenses][col]);
-      // 변동분 = (newAd - baseAd) + (newComm - baseComm) = -revenueDelta * 0.3
-      const expenseDelta = -(revenueDelta * 0.30);
+      // 변동분 = (newAd - baseAd) + (newComm - baseComm) = -revenueDelta * 0.5
+      const expenseDelta = -(revenueDelta * 0.50);
       newExpensesTotal = baseExpensesTotal + expenseDelta;
       newRows[rowIdx.expenses][col] = formatNumber(newExpensesTotal);
     } else {
