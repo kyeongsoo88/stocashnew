@@ -141,7 +141,23 @@ export default function Home() {
                 <span className="text-blue-200 text-xs">200%</span>
               </div>
               
-              <span className="text-white font-bold text-lg min-w-[50px] text-right">{growthRate}%</span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min="100"
+                  max="200"
+                  step="1"
+                  value={growthRate}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (val >= 100 && val <= 200) {
+                      handleGrowthRateChange(val);
+                    }
+                  }}
+                  className="w-[60px] px-2 py-1 text-center bg-white text-gray-900 font-bold text-base rounded border border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <span className="text-white font-medium text-base">%</span>
+              </div>
             </div>
           </div>
         </div>

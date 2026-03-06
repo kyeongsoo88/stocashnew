@@ -158,21 +158,30 @@ export const recalculateCashflow = (baseData: ParsedData, targetRate: number): P
     }
   }
 
-  // 합계(26년 합계) 및 YoY 컬럼 업데이트 (모든 행 적용)
-  const sumCol = 14;
+  // 합계(26년 계획, 26년 합계), YoY 및 계획대비 컬럼 업데이트 (모든 행 적용)
+  const planCol = 14;      // 26년(계획)
+  const sumCol = 15;       // 26년(합계)
   const col25 = 1;
-  const colYoY = 15;
+  const colYoY = 16;       // YoY
+  const colPlanDiff = 17;  // 계획대비
 
   // 헤더 확인
+  const hasPlanCol = baseData.headers[planCol] && baseData.headers[planCol].includes("계획");
   const hasSumCol = baseData.headers[sumCol] && baseData.headers[sumCol].includes("합계");
   const hasYoYCol = baseData.headers[colYoY] && baseData.headers[colYoY].includes("YoY");
+  const hasPlanDiffCol = baseData.headers[colPlanDiff] && baseData.headers[colPlanDiff].includes("계획대비");
   const has25Col = baseData.headers[col25] && baseData.headers[col25].includes("25년");
 
   if (hasSumCol) {
     newRows.forEach((row, idx) => {
       const name = row[0] || "";
       
-      // 1. 26년 합계 계산
+      // 1. 26년(계획) - CSV 원본 값 유지 (baseData에서 복사)
+      if (hasPlanCol) {
+        row[planCol] = baseData.rows[idx][planCol];
+      }
+      
+      // 2. 26년(합계) 계산
       if (name.includes("기초잔액")) {
         // 기초잔액 합계는 '1월 기초잔액'으로 고정
         row[sumCol] = row[startCol];
@@ -188,11 +197,18 @@ export const recalculateCashflow = (baseData: ParsedData, targetRate: number): P
         row[sumCol] = formatNumber(sum);
       }
 
-      // 2. YoY 컬럼 업데이트 (YoY = 26년 합계 - 25년 합계)
+      // 3. YoY 컬럼 업데이트 (YoY = 26년 합계 - 25년 합계)
       if (hasYoYCol && has25Col) {
         const val26 = parseNumber(row[sumCol]);
         const val25 = parseNumber(row[col25]);
         row[colYoY] = formatNumber(val26 - val25);
+      }
+
+      // 4. 계획대비 컬럼 업데이트 (계획대비 = 26년(합계) - 26년(계획))
+      if (hasPlanDiffCol && hasPlanCol) {
+        const valSum = parseNumber(row[sumCol]);
+        const valPlan = parseNumber(row[planCol]);
+        row[colPlanDiff] = formatNumber(valSum - valPlan);
       }
     });
   }
@@ -236,18 +252,29 @@ export const updateCashloanFromCashflow = (baseCashloan: ParsedData, newCashflow
       newRows[cashBalanceIdx][colIdxInCashLoan] = newCashflow.rows[cfEndingIdx][colIdxInCashFlow];
   }
 
-  // 3. 전체 기말잔액 (Col 14) -> 12월 기말잔액과 동일
-  newRows[cashBalanceIdx][14] = newCashflow.rows[cfEndingIdx][13];
+  // 3. 26년(계획) (Col 14) -> CSV 원본 값 유지
+  newRows[cashBalanceIdx][14] = baseCashloan.rows[cashBalanceIdx][14];
 
-  // 4. YoY 업데이트 (Col 15)
-  // 25년 합계(Col 1), 26년 합계(Col 14), YoY(Col 15) 가정
+  // 4. 26년(기말) (Col 15) -> 12월 기말잔액과 동일
+  newRows[cashBalanceIdx][15] = newCashflow.rows[cfEndingIdx][13];
+
+  // 5. YoY 업데이트 (Col 16)
+  // 25년 합계(Col 1), 26년 합계(Col 15), YoY(Col 16) 가정
   const col25 = 1;
-  const colYoY = 15;
+  const colYoY = 16;
+  const colPlanDiff = 17;  // 계획대비
   // 헤더 확인은 baseCashloan.headers 이용
   if (baseCashloan.headers[colYoY] && baseCashloan.headers[colYoY].includes("YoY")) {
-      const val26 = parseNumber(newRows[cashBalanceIdx][14]);
+      const val26 = parseNumber(newRows[cashBalanceIdx][15]);
       const val25 = parseNumber(newRows[cashBalanceIdx][col25]);
       newRows[cashBalanceIdx][colYoY] = formatNumber(val26 - val25);
+  }
+
+  // 6. 계획대비 업데이트 (Col 17) - 계획대비 = 26년(기말) - 26년(계획)
+  if (baseCashloan.headers[colPlanDiff] && baseCashloan.headers[colPlanDiff].includes("계획대비")) {
+      const valSum = parseNumber(newRows[cashBalanceIdx][15]);
+      const valPlan = parseNumber(newRows[cashBalanceIdx][14]);
+      newRows[cashBalanceIdx][colPlanDiff] = formatNumber(valSum - valPlan);
   }
 
   return { headers: baseCashloan.headers, rows: newRows };
@@ -287,8 +314,10 @@ export const recalculateWorkingCapital = (
   const col25End = 1;
   const colJan = 2;
   const colDec = 13;
-  const col26End = 14;
-  const colYoY = 15;
+  const col26Plan = 14;  // 26년(계획)
+  const col26End = 15;   // 26년(기말)
+  const colYoY = 16;
+  const colPlanDiff = 17;  // 계획대비
 
   // 1. 월별 재계산 (25년기말 ~ 12월)
   for (let col = col25End; col <= colDec; col++) {
@@ -319,8 +348,11 @@ export const recalculateWorkingCapital = (
     newRows[idxTotal][col] = formatNumber(total);
   }
 
-  // 2. 모든 행에 대해 26년(기말) 및 YoY 업데이트
-  newRows.forEach(row => {
+  // 2. 모든 행에 대해 26년(계획), 26년(기말), YoY 및 계획대비 업데이트
+  newRows.forEach((row, idx) => {
+    // 26년(계획) = CSV 원본 값 유지 (baseWcData에서 복사)
+    row[col26Plan] = baseWcData.rows[idx][col26Plan];
+    
     // 26년(기말) = 12월 값
     row[col26End] = row[colDec];
 
@@ -328,6 +360,10 @@ export const recalculateWorkingCapital = (
     const val26 = parseNumber(row[col26End]);
     const val25 = parseNumber(row[col25End]);
     row[colYoY] = formatNumber(val26 - val25);
+
+    // 계획대비 = 26년(기말) - 26년(계획)
+    const valPlan = parseNumber(row[col26Plan]);
+    row[colPlanDiff] = formatNumber(val26 - valPlan);
   });
 
   return { headers: baseWcData.headers, rows: newRows };
