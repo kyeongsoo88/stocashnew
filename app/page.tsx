@@ -28,6 +28,9 @@ export default function Home() {
   // Growth Rate State (Number, 100-200)
   const [growthRate, setGrowthRate] = useState<number>(130);
   
+  // Local input value for typing experience
+  const [inputValue, setInputValue] = useState<string>("130");
+  
   const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>({
     cashflow: true,
     cashloan: true,
@@ -104,6 +107,7 @@ export default function Home() {
 
   const handleGrowthRateChange = (rate: number) => {
     setGrowthRate(rate);
+    setInputValue(String(rate));
   };
 
 
@@ -147,10 +151,26 @@ export default function Home() {
                   min="100"
                   max="200"
                   step="1"
-                  value={growthRate}
+                  value={inputValue}
                   onChange={(e) => {
+                    const val = e.target.value;
+                    // 타이핑 중인 값을 그대로 표시
+                    setInputValue(val);
+                    
+                    // 유효한 숫자인 경우에만 실제 값 업데이트
+                    const numVal = Number(val);
+                    if (!isNaN(numVal) && numVal >= 100 && numVal <= 200) {
+                      setGrowthRate(numVal);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // 포커스 아웃시 범위 검증 및 보정
                     const val = Number(e.target.value);
-                    if (val >= 100 && val <= 200) {
+                    if (isNaN(val) || val < 100) {
+                      handleGrowthRateChange(100);
+                    } else if (val > 200) {
+                      handleGrowthRateChange(200);
+                    } else {
                       handleGrowthRateChange(val);
                     }
                   }}
