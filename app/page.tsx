@@ -222,6 +222,7 @@ export default function Home() {
                         expandAll={expandAllGroups.cashflow}
                         onExpandAllChange={(val) => setExpandAllGroups(prev => ({ ...prev, cashflow: val }))}
                         headerStyle="dark"
+                        useNewLayout={true}
                       />
                     )}
                   </div>
@@ -239,7 +240,8 @@ export default function Home() {
                         rows={cashloanData.rows}
                         showMonthly={showMonthly}
                         expandAll={true}
-                        headerStyle="dark" 
+                        headerStyle="dark"
+                        useNewLayout={true}
                       />
                     )}
                   </div>
@@ -265,6 +267,7 @@ export default function Home() {
                         expandAll={expandAllGroups.workingcapital}
                         onExpandAllChange={(val) => setExpandAllGroups(prev => ({ ...prev, workingcapital: val }))}
                         headerStyle="dark"
+                        useNewLayout={true}
                       />
                     )}
                   </div>

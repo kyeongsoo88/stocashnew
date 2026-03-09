@@ -14,6 +14,7 @@ interface DataTableProps {
   expandAll?: boolean;
   onExpandAllChange?: (expanded: boolean) => void;
   headerStyle?: 'dark' | 'light';
+  useNewLayout?: boolean; // 새로운 레이아웃 사용 여부
 }
 
 interface TreeRow {
@@ -109,6 +110,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   showMonthly = false,
   expandAll = false,
   headerStyle = 'dark',
+  useNewLayout = false,
 }) => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -170,34 +172,165 @@ export const DataTable: React.FC<DataTableProps> = ({
   const headerBg   = headerStyle === 'dark' ? '#3b5998' : '#f3f4f6';
   const headerText = headerStyle === 'dark' ? '#ffffff'  : '#111827';
 
+  // 새로운 레이아웃의 헤더 구조 정의
+  const newLayoutHeaders = useNewLayout && !showMonthly ? [
+    { label: '계정과목', rowSpan: 2, colSpan: 1 },
+    { label: '2025년(합계)', rowSpan: 2, colSpan: 1 },
+    { label: '계획', rowSpan: 1, colSpan: 2, children: [
+      { label: '2026년(계획)', rowSpan: 1, colSpan: 1 },
+      { label: '계획-전년', rowSpan: 1, colSpan: 1 },
+    ]},
+    { label: '2026년 Rolling', rowSpan: 1, colSpan: 4, children: [
+      { label: '2026년(합계)', rowSpan: 1, colSpan: 1 },
+      { label: 'Rolling-전년', rowSpan: 1, colSpan: 1 },
+      { label: '계획대비증감', rowSpan: 1, colSpan: 1 },
+      { label: '계획대비(%)', rowSpan: 1, colSpan: 1 },
+    ]},
+  ] : null;
+
   return (
     <div className="w-full bg-white overflow-hidden">
       <div className="overflow-auto relative">
         <table className="min-w-full text-sm border-collapse border border-gray-300">
 
           {/* ── Header ── */}
-          <thead className="sticky top-0 z-20" style={{ backgroundColor: headerBg }}>
-            <tr>
-              {visibleHeaders.map((h, i) => {
-                const isLast = i === visibleHeaders.length - 1;
-                return (
-                  <th
-                    key={i}
-                    style={{ backgroundColor: headerBg, color: headerText }}
-                    className={cn(
-                      'px-4 py-3 border font-bold whitespace-nowrap text-center',
-                      headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                      i === 0 && 'sticky left-0 z-30 min-w-[200px]',
-                      i !== 0 && !isLast && 'min-w-[100px]',
-                      isLast && 'min-w-[120px]',
-                    )}
-                  >
-                    {h}
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
+          {useNewLayout && !showMonthly ? (
+            // 새로운 2-tier 헤더 레이아웃
+            <thead className="sticky top-0 z-20" style={{ backgroundColor: headerBg }}>
+              {/* 첫 번째 행: 대컬럼 */}
+              <tr>
+                <th
+                  rowSpan={2}
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                    'sticky left-0 z-30 min-w-[200px]'
+                  )}
+                >
+                  계정과목
+                </th>
+                <th
+                  rowSpan={2}
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                    'min-w-[100px]'
+                  )}
+                >
+                  2025년(합계)
+                </th>
+                <th
+                  colSpan={2}
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                  )}
+                >
+                  계획
+                </th>
+                <th
+                  colSpan={4}
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                  )}
+                >
+                  2026년 Rolling
+                </th>
+              </tr>
+              {/* 두 번째 행: 소컬럼 */}
+              <tr>
+                <th
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                    'min-w-[100px]'
+                  )}
+                >
+                  2026년(계획)
+                </th>
+                <th
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                    'min-w-[100px]'
+                  )}
+                >
+                  계획-전년
+                </th>
+                <th
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                    'min-w-[100px]'
+                  )}
+                >
+                  2026년(합계)
+                </th>
+                <th
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                    'min-w-[100px]'
+                  )}
+                >
+                  Rolling-전년
+                </th>
+                <th
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                    'min-w-[100px]'
+                  )}
+                >
+                  계획대비증감
+                </th>
+                <th
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                    'min-w-[120px]'
+                  )}
+                >
+                  계획대비(%)
+                </th>
+              </tr>
+            </thead>
+          ) : (
+            // 기존 헤더 레이아웃
+            <thead className="sticky top-0 z-20" style={{ backgroundColor: headerBg }}>
+              <tr>
+                {visibleHeaders.map((h, i) => {
+                  const isLast = i === visibleHeaders.length - 1;
+                  return (
+                    <th
+                      key={i}
+                      style={{ backgroundColor: headerBg, color: headerText }}
+                      className={cn(
+                        'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                        headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                        i === 0 && 'sticky left-0 z-30 min-w-[200px]',
+                        i !== 0 && !isLast && 'min-w-[100px]',
+                        isLast && 'min-w-[120px]',
+                      )}
+                    >
+                      {h}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+          )}
 
           {/* ── Body ── */}
           <tbody className="divide-y divide-gray-100">
@@ -212,6 +345,61 @@ export const DataTable: React.FC<DataTableProps> = ({
 
               const indent = INDENT[node.level] ?? 'pl-4';
 
+              // 새로운 레이아웃: 컬럼 재정렬 및 계산
+              let displayCells = cells;
+              if (useNewLayout && !showMonthly) {
+                // showMonthly=false일 때 cells는 이미 필터링됨:
+                // [0]계정과목 [1]25년합계 [2]26년계획 [3]26년합계 [4]전년대비 [5]계획대비
+                
+                // 새로운 컬럼 순서:
+                // [0]계정과목 [1]25년합계 [2]26년계획 [3]계획-전년 [4]26년합계 [5]Rolling-전년 [6]계획대비증감 [7]계획대비%
+
+                const account = cells[0] || '';
+                const y25Total = cells[1] || '0';
+                const y26Plan = cells[2] || '0';  // 필터링 후 인덱스
+                const y26Actual = cells[3] || '0';  // 필터링 후 인덱스
+                
+                // 숫자 변환 함수
+                const parseNum = (v: string): number => {
+                  if (!v || v.trim() === '') return 0;
+                  const clean = v.replace(/,/g, '').replace(/[()]/g, '');
+                  const num = parseFloat(clean);
+                  return isNaN(num) ? 0 : (v.includes('(') || v.startsWith('-') ? -Math.abs(num) : num);
+                };
+
+                // 숫자 포맷 함수 (새로운 계산된 값용)
+                const formatNumber = (v: number): string => {
+                  if (v === 0) return '0';
+                  const abs = Math.abs(v);
+                  const formatted = abs.toLocaleString('en-US', { 
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0 
+                  });
+                  return v < 0 ? `(${formatted})` : formatted;
+                };
+
+                const n25 = parseNum(y25Total);
+                const nPlan = parseNum(y26Plan);
+                const nActual = parseNum(y26Actual);
+
+                // 계산
+                const planMinusPrevYear = nPlan - n25;
+                const rollingMinusPrevYear = nActual - n25;
+                const planVsActual = nActual - nPlan;
+                const planRatio = nPlan !== 0 ? (nActual / nPlan * 100) : 0;
+
+                displayCells = [
+                  account,
+                  y25Total,
+                  y26Plan,
+                  formatNumber(planMinusPrevYear),
+                  y26Actual,
+                  formatNumber(rollingMinusPrevYear),
+                  formatNumber(planVsActual),
+                  planRatio.toFixed(0) + '%',
+                ];
+              }
+
               return (
                 <tr
                   key={node.id}
@@ -222,8 +410,8 @@ export const DataTable: React.FC<DataTableProps> = ({
                     isSpecial ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50',
                   )}
                 >
-                  {cells.map((cell, ci) => {
-                    const isLast  = ci === cells.length - 1;
+                  {displayCells.map((cell, ci) => {
+                    const isLast  = ci === displayCells.length - 1;
                     const val     = formatNum(cell);
                     const neg     = ci !== 0 && isNeg(cell);
 
@@ -240,7 +428,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                           ci === 0 && !isSpecial && 'bg-white group-hover:bg-gray-50',
                           // numeric cols
                           ci !== 0 && !isLast && 'text-right',
-                          // last col (YoY)
+                          // last col
                           isLast && 'text-right',
                           isLast && isSpecial && 'bg-blue-50 group-hover:bg-blue-100',
                           isLast && !isSpecial && 'bg-white group-hover:bg-gray-50',
