@@ -132,10 +132,10 @@ export default function Home() {
               <span className="text-white text-sm font-medium whitespace-nowrap">성장률 설정</span>
               
               <div className="flex items-center gap-2">
-                <span className="text-blue-200 text-xs">100%</span>
+                <span className="text-blue-200 text-xs">80%</span>
                 <input
                   type="range"
-                  min="100"
+                  min="80"
                   max="200"
                   step="1"
                   value={growthRate}
@@ -148,7 +148,7 @@ export default function Home() {
               <div className="flex items-center gap-1">
                 <input
                   type="number"
-                  min="100"
+                  min="80"
                   max="200"
                   step="1"
                   value={inputValue}
@@ -159,15 +159,15 @@ export default function Home() {
                     
                     // 유효한 숫자인 경우에만 실제 값 업데이트
                     const numVal = Number(val);
-                    if (!isNaN(numVal) && numVal >= 100 && numVal <= 200) {
+                    if (!isNaN(numVal) && numVal >= 80 && numVal <= 200) {
                       setGrowthRate(numVal);
                     }
                   }}
                   onBlur={(e) => {
                     // 포커스 아웃시 범위 검증 및 보정
                     const val = Number(e.target.value);
-                    if (isNaN(val) || val < 100) {
-                      handleGrowthRateChange(100);
+                    if (isNaN(val) || val < 80) {
+                      handleGrowthRateChange(80);
                     } else if (val > 200) {
                       handleGrowthRateChange(200);
                     } else {
