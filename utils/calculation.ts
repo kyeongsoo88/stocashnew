@@ -16,7 +16,7 @@ const formatNumber = (num: number): string => {
 };
 
 /**
- * 130% 성장 기준 데이터를 바탕으로, 특정 성장률(targetRate)일 때의 현금흐름표를 재계산
+ * 100% 성장 기준 데이터를 바탕으로, 특정 성장률(targetRate)일 때의 현금흐름표를 재계산
  */
 export const recalculateCashflow = (baseData: ParsedData, targetRate: number): ParsedData => {
   // 깊은 복사로 원본 보존
@@ -54,8 +54,8 @@ export const recalculateCashflow = (baseData: ParsedData, targetRate: number): P
   const startCol = 2;
   const endCol = 13;
 
-  // 비율 계산 (130%가 기준이므로 130으로 나눔)
-  const ratio = targetRate / 130;
+  // 비율 계산 (100%가 기준이므로 100으로 나눔)
+  const ratio = targetRate / 100;
 
   for (let col = startCol; col <= endCol; col++) {
     // 1월(index 2)과 2월(index 3)은 Actual 데이터이므로 변동 없음

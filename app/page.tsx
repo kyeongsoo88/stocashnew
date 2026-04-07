@@ -26,10 +26,10 @@ export default function Home() {
   const [showMonthly, setShowMonthly] = useState(false);
   
   // Growth Rate State (Number, 100-200)
-  const [growthRate, setGrowthRate] = useState<number>(130);
+  const [growthRate, setGrowthRate] = useState<number>(100);
   
   // Local input value for typing experience
-  const [inputValue, setInputValue] = useState<string>("130");
+  const [inputValue, setInputValue] = useState<string>("100");
   
   const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>({
     cashflow: true,
@@ -57,7 +57,7 @@ export default function Home() {
       setBaseCashloanData(clResult); // Save base cashloan data
       setBaseWorkingCapitalData(wcResult); // Save base working capital data
 
-      // Initialize with base data (130%) & initial recalculations
+      // Initialize with base data (100%) & initial recalculations
       setCashflowData(cfResult);
       setCashloanData(clResult);
       // 운전자본표 합계 초기 재계산 (매출 변동 없음 -> 델타 0)
