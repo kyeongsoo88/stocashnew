@@ -28,7 +28,7 @@ interface TreeRow {
 const LEVEL0_PARENTS     = ['영업활동', '재무활동'];
 const LEVEL0_STANDALONE  = ['기초잔액', '기말잔액', 'Net Cash', '운전자본 합계', '매출채권', '재고자산', '매입채무'];
 const LEVEL1_OF_영업     = ['매출수금', '물품대 지출', '비용지출'];
-const LEVEL1_OF_재무     = ['기타수금', '기타지출'];
+const LEVEL1_OF_재무     = ['본사차입', 'STE감자', 'STE청산', 'STE지분매입', '본사차입상환'];
 const LEVEL2_OF_매출수금 = ['온라인(US+EU)', '홀세일', '라이선스'];
 const LEVEL2_OF_비용지출 = ['인건비', '지급수수료', '광고선전비', '기타비용'];
 
