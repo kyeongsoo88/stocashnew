@@ -258,16 +258,16 @@ export const updateCashloanFromCashflow = (baseCashloan: ParsedData, newCashflow
   // 4. 26년(기말) (Col 15) -> 12월 기말잔액과 동일
   newRows[cashBalanceIdx][15] = newCashflow.rows[cfEndingIdx][13];
 
-  // 5. YoY 업데이트 (Col 16)
-  // 25년 합계(Col 1), 26년 합계(Col 15), YoY(Col 16) 가정
-  const col25 = 1;
+  // 5. 전년대비 업데이트 (Col 16) - 변경: 26년(기말) - 26년(기초잔액)
+  // 26년(기말)(Col 15), 26년(기초잔액)(Col 1), 전년대비(Col 16)
+  const col25 = 1;  // 기초잔액
   const colYoY = 16;
   const colPlanDiff = 17;  // 계획대비
   // 헤더 확인은 baseCashloan.headers 이용
-  if (baseCashloan.headers[colYoY] && baseCashloan.headers[colYoY].includes("YoY")) {
-      const val26 = parseNumber(newRows[cashBalanceIdx][15]);
-      const val25 = parseNumber(newRows[cashBalanceIdx][col25]);
-      newRows[cashBalanceIdx][colYoY] = formatNumber(val26 - val25);
+  if (baseCashloan.headers[colYoY] && baseCashloan.headers[colYoY].includes("전년대비")) {
+      const val26End = parseNumber(newRows[cashBalanceIdx][15]);  // 26년(기말)
+      const val26Begin = parseNumber(newRows[cashBalanceIdx][col25]);  // 26년(기초잔액)
+      newRows[cashBalanceIdx][colYoY] = formatNumber(val26End - val26Begin);
   }
 
   // 6. 계획대비 업데이트 (Col 17) - 계획대비 = 26년(기말) - 26년(계획)
@@ -275,6 +275,26 @@ export const updateCashloanFromCashflow = (baseCashloan: ParsedData, newCashflow
       const valSum = parseNumber(newRows[cashBalanceIdx][15]);
       const valPlan = parseNumber(newRows[cashBalanceIdx][14]);
       newRows[cashBalanceIdx][colPlanDiff] = formatNumber(valSum - valPlan);
+  }
+
+  // 7. 차입금잔액 행 처리 (전년대비 및 계획대비)
+  const loanBalanceIdx = newRows.findIndex(row => row[0] && row[0].includes("차입금잔액"));
+  if (loanBalanceIdx !== -1) {
+      // 차입금잔액은 원본 유지하되, 전년대비와 계획대비만 재계산
+      
+      // 전년대비 = 26년(기말) - 26년(기초잔액)
+      if (baseCashloan.headers[colYoY] && baseCashloan.headers[colYoY].includes("전년대비")) {
+          const loanEnd = parseNumber(newRows[loanBalanceIdx][15]);  // 26년(기말)
+          const loanBegin = parseNumber(newRows[loanBalanceIdx][col25]);  // 26년(기초잔액)
+          newRows[loanBalanceIdx][colYoY] = formatNumber(loanEnd - loanBegin);
+      }
+      
+      // 계획대비 = 26년(기말) - 26년(계획)
+      if (baseCashloan.headers[colPlanDiff] && baseCashloan.headers[colPlanDiff].includes("계획대비")) {
+          const loanSum = parseNumber(newRows[loanBalanceIdx][15]);
+          const loanPlan = parseNumber(newRows[loanBalanceIdx][14]);
+          newRows[loanBalanceIdx][colPlanDiff] = formatNumber(loanSum - loanPlan);
+      }
   }
 
   return { headers: baseCashloan.headers, rows: newRows };
