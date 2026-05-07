@@ -176,15 +176,15 @@ export const DataTable: React.FC<DataTableProps> = ({
   const newLayoutHeaders = useNewLayout && !showMonthly ? [
     { label: '계정과목', rowSpan: 2, colSpan: 1 },
     { label: '2025년(합계)', rowSpan: 2, colSpan: 1 },
-    { label: '계획', rowSpan: 1, colSpan: 2, children: [
-      { label: '2026년(계획)', rowSpan: 1, colSpan: 1 },
-      { label: '계획-전년', rowSpan: 1, colSpan: 1 },
+    { label: 'RF_03', rowSpan: 1, colSpan: 2, children: [
+      { label: 'RF_03', rowSpan: 1, colSpan: 1 },
+      { label: 'RF_03 - 전년', rowSpan: 1, colSpan: 1 },
     ]},
-    { label: '2026년 Rolling', rowSpan: 1, colSpan: 4, children: [
-      { label: '2026년(합계)', rowSpan: 1, colSpan: 1 },
-      { label: 'Rolling-전년', rowSpan: 1, colSpan: 1 },
-      { label: '계획대비증감', rowSpan: 1, colSpan: 1 },
-      { label: '계획대비(%)', rowSpan: 1, colSpan: 1 },
+    { label: 'RF_04', rowSpan: 1, colSpan: 4, children: [
+      { label: 'RF_04', rowSpan: 1, colSpan: 1 },
+      { label: 'RF_04 - 전년', rowSpan: 1, colSpan: 1 },
+      { label: 'RF_03대비 증감', rowSpan: 1, colSpan: 1 },
+      { label: 'RF_03대비(%)', rowSpan: 1, colSpan: 1 },
     ]},
   ] : null;
 
@@ -229,7 +229,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
                   )}
                 >
-                  계획
+                  RF_03
                 </th>
                 <th
                   colSpan={4}
@@ -239,7 +239,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
                   )}
                 >
-                  2026년 Rolling
+                  RF_04
                 </th>
               </tr>
               {/* 두 번째 행: 소컬럼 */}
@@ -252,7 +252,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[100px]'
                   )}
                 >
-                  2026년(계획)
+                  RF_03
                 </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
@@ -262,7 +262,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[100px]'
                   )}
                 >
-                  계획-전년
+                  RF_03 - 전년
                 </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
@@ -272,7 +272,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[100px]'
                   )}
                 >
-                  2026년(합계)
+                  RF_04
                 </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
@@ -282,7 +282,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[100px]'
                   )}
                 >
-                  Rolling-전년
+                  RF_04 - 전년
                 </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
@@ -292,7 +292,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[100px]'
                   )}
                 >
-                  계획대비증감
+                  RF_03대비 증감
                 </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
@@ -302,7 +302,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[120px]'
                   )}
                 >
-                  계획대비(%)
+                  RF_03대비(%)
                 </th>
               </tr>
             </thead>
