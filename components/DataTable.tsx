@@ -26,16 +26,17 @@ interface TreeRow {
 }
 
 // ── keyword sets ──────────────────────────────────────────────
-const LEVEL0_PARENTS     = ['영업활동', '재무활동'];
+const LEVEL0_PARENTS     = ['영업활동', '재무활동', '로열티수금', '비용지출'];
 const LEVEL0_STANDALONE  = ['기초잔액', '기말잔액', 'Net Cash', '운전자본 합계', '매출채권', '재고자산', '매입채무'];
-const LEVEL1_OF_영업     = ['매출수금', '물품대 지출', '비용지출'];
+const LEVEL1_OF_영업     = ['매출수금', '물품대 지출'];
 const LEVEL1_OF_재무     = ['본사차입', 'STE감자', 'STE청산', 'STE지분매입', '본사차입상환'];
+const LEVEL1_OF_로열티수금 = ['Movin', 'SUGI', 'Benjamin', 'Silver', 'UBC', 'BBUK', 'BDS'];
+const LEVEL1_OF_비용지출 = ['인건비', '지급수수료', '광고선전비', '기타비용'];
 const LEVEL2_OF_매출수금 = ['온라인(US+EU)', '홀세일', '라이선스'];
-const LEVEL2_OF_비용지출 = ['인건비', '지급수수료', '광고선전비', '기타비용'];
 
 function buildTree(rows: string[][]): TreeRow[] {
   const roots: TreeRow[] = [];
-  let l0Parent: TreeRow | null = null;   // 영업활동 / 재무활동
+  let l0Parent: TreeRow | null = null;   // 영업활동 / 재무활동 / 로열티수금 / 비용지출
   let l1Parent: TreeRow | null = null;   // 매출수금 / 비용지출 / …
 
   rows.forEach((row, index) => {
@@ -46,8 +47,9 @@ function buildTree(rows: string[][]): TreeRow[] {
     const isL0Standalone= LEVEL0_STANDALONE.some(k => name.includes(k));
     const isL1_영업     = LEVEL1_OF_영업.some(k => name.includes(k));
     const isL1_재무     = LEVEL1_OF_재무.some(k => name.includes(k));
+    const isL1_로열티   = LEVEL1_OF_로열티수금.some(k => name.includes(k));
+    const isL1_비용     = LEVEL1_OF_비용지출.some(k => name.includes(k));
     const isL2_매출     = LEVEL2_OF_매출수금.some(k => name.includes(k));
-    const isL2_비용     = LEVEL2_OF_비용지출.some(k => name.includes(k));
 
     if (isL0Standalone) {
       l0Parent = null; l1Parent = null;
@@ -61,9 +63,6 @@ function buildTree(rows: string[][]): TreeRow[] {
     } else if (isL2_매출 && l1Parent?.data[0]?.includes('매출수금')) {
       l1Parent.children.push({ id, data: row, children: [], level: 2 });
 
-    } else if (isL2_비용 && l1Parent?.data[0]?.includes('비용지출')) {
-      l1Parent.children.push({ id, data: row, children: [], level: 2 });
-
     } else if (isL1_영업 && l0Parent?.data[0]?.includes('영업활동')) {
       l1Parent = { id, data: row, children: [], level: 1 };
       l0Parent.children.push(l1Parent);
@@ -71,6 +70,12 @@ function buildTree(rows: string[][]): TreeRow[] {
     } else if (isL1_재무 && l0Parent?.data[0]?.includes('재무활동')) {
       l1Parent = { id, data: row, children: [], level: 1 };
       l0Parent.children.push(l1Parent);
+
+    } else if (isL1_로열티 && l0Parent?.data[0]?.includes('로열티수금')) {
+      l0Parent.children.push({ id, data: row, children: [], level: 1 });
+
+    } else if (isL1_비용 && l0Parent?.data[0]?.includes('비용지출')) {
+      l0Parent.children.push({ id, data: row, children: [], level: 1 });
 
     } else {
       // fallback: orphan → root
@@ -140,8 +145,8 @@ export const DataTable: React.FC<DataTableProps> = ({
             if (next[n.id] === undefined) {
               changed = true;
               const name = n.data[0] || '';
-              // 영업활동, 매출수금만 펼침 / 비용지출, 재무활동은 접힘
-              if (name.includes('영업활동') || name.includes('매출수금')) {
+              // 영업활동, 매출수금, 로열티수금, 비용지출은 펼침 / 재무활동은 접힘
+              if (name.includes('영업활동') || name.includes('매출수금') || name.includes('로열티수금') || name.includes('비용지출')) {
                 next[n.id] = true;
               } else {
                 next[n.id] = false;
