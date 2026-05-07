@@ -15,6 +15,7 @@ interface DataTableProps {
   onExpandAllChange?: (expanded: boolean) => void;
   headerStyle?: 'dark' | 'light';
   useNewLayout?: boolean; // 새로운 레이아웃 사용 여부
+  detailsData?: Record<string, string>; // 계정과목별 상세 설명
 }
 
 interface TreeRow {
@@ -111,6 +112,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   expandAll = false,
   headerStyle = 'dark',
   useNewLayout = false,
+  detailsData = {},
 }) => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -180,11 +182,12 @@ export const DataTable: React.FC<DataTableProps> = ({
       { label: 'RF_03', rowSpan: 1, colSpan: 1 },
       { label: 'RF_03 - 전년', rowSpan: 1, colSpan: 1 },
     ]},
-    { label: 'RF_04', rowSpan: 1, colSpan: 4, children: [
+    { label: 'RF_04', rowSpan: 1, colSpan: 5, children: [
       { label: 'RF_04', rowSpan: 1, colSpan: 1 },
       { label: 'RF_04 - 전년', rowSpan: 1, colSpan: 1 },
       { label: 'RF_03대비 증감', rowSpan: 1, colSpan: 1 },
       { label: 'RF_03대비(%)', rowSpan: 1, colSpan: 1 },
+      { label: '상세', rowSpan: 1, colSpan: 1 },
     ]},
   ] : null;
 
@@ -232,7 +235,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   RF_03
                 </th>
                 <th
-                  colSpan={4}
+                  colSpan={5}
                   style={{ backgroundColor: headerBg, color: headerText }}
                   className={cn(
                     'px-4 py-3 border font-bold whitespace-nowrap text-center',
@@ -303,6 +306,16 @@ export const DataTable: React.FC<DataTableProps> = ({
                   )}
                 >
                   RF_03대비(%)
+                </th>
+                <th
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                    'min-w-[200px]'
+                  )}
+                >
+                  상세
                 </th>
               </tr>
             </thead>
@@ -388,6 +401,10 @@ export const DataTable: React.FC<DataTableProps> = ({
                 const planVsActual = nActual - nPlan;
                 const planRatio = nPlan !== 0 ? (nActual / nPlan * 100) : 0;
 
+                // 계정과목에 대한 상세 설명 가져오기
+                const accountName = account.trim();
+                const detailText = detailsData[accountName] || '';
+
                 displayCells = [
                   account,
                   y25Total,
@@ -397,6 +414,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   formatNumber(rollingMinusPrevYear),
                   formatNumber(planVsActual),
                   planRatio.toFixed(0) + '%',
+                  detailText,
                 ];
               }
 
@@ -414,22 +432,25 @@ export const DataTable: React.FC<DataTableProps> = ({
                     const isLast  = ci === displayCells.length - 1;
                     const val     = formatNum(cell);
                     const neg     = ci !== 0 && isNeg(cell);
+                    const isDetailCol = isLast && useNewLayout && !showMonthly;
 
                     return (
                       <td
                         key={ci}
                         className={cn(
                           'px-4 py-3 border border-gray-300 whitespace-nowrap font-bold',
-                          neg ? 'text-red-600' : 'text-gray-900',
+                          neg && !isDetailCol ? 'text-red-600' : 'text-gray-900',
                           // first column
                           ci === 0 && 'sticky left-0 z-10 text-left shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]',
                           ci === 0 && indent,
                           ci === 0 && isSpecial && 'bg-blue-50 group-hover:bg-blue-100',
                           ci === 0 && !isSpecial && 'bg-white group-hover:bg-gray-50',
+                          // detail column (상세) - 검정색 볼드체
+                          isDetailCol && 'text-left text-sm !text-gray-900 !font-bold',
                           // numeric cols
                           ci !== 0 && !isLast && 'text-right',
-                          // last col
-                          isLast && 'text-right',
+                          // last col (except detail)
+                          isLast && !isDetailCol && 'text-right',
                           isLast && isSpecial && 'bg-blue-50 group-hover:bg-blue-100',
                           isLast && !isSpecial && 'bg-white group-hover:bg-gray-50',
                         )}

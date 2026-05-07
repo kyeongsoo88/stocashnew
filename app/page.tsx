@@ -15,6 +15,11 @@ export default function Home() {
   const [baseCashloanData, setBaseCashloanData] = useState<ParsedData | null>(null);
   const [baseWorkingCapitalData, setBaseWorkingCapitalData] = useState<ParsedData | null>(null);
   
+  // Details data for each table
+  const [cashflowDetails, setCashflowDetails] = useState<Record<string, string>>({});
+  const [cashloanDetails, setCashloanDetails] = useState<Record<string, string>>({});
+  const [workingCapitalDetails, setWorkingCapitalDetails] = useState<Record<string, string>>({});
+  
   // Displayed data (recalculated based on growth rate)
   const [cashflowData, setCashflowData] = useState<ParsedData | null>(null);
   const [cashloanData, setCashloanData] = useState<ParsedData | null>(null);
@@ -47,15 +52,49 @@ export default function Home() {
     setError(null);
     try {
       // Load only the base files (standard 130% data)
-      const [cfResult, clResult, wcResult] = await Promise.all([
+      const [cfResult, clResult, wcResult, cfDetailsResult, clDetailsResult, wcDetailsResult] = await Promise.all([
         fetchAndParseCsv(`/data/cashflow.csv`),
         fetchAndParseCsv(`/data/cashloan.csv`),
         fetchAndParseCsv(`/data/workingcapital.csv`),
+        fetchAndParseCsv(`/data/cashflow_details.csv`),
+        fetchAndParseCsv(`/data/cashloan_details.csv`),
+        fetchAndParseCsv(`/data/workingcapital_details.csv`),
       ]);
       
       setBaseCashflowData(cfResult);
       setBaseCashloanData(clResult); // Save base cashloan data
       setBaseWorkingCapitalData(wcResult); // Save base working capital data
+
+      // Parse details data into maps
+      const cfDetailsMap: Record<string, string> = {};
+      cfDetailsResult.rows.forEach(row => {
+        const accountName = row[0]?.trim();
+        const detail = row[1]?.trim() || '';
+        if (accountName) {
+          cfDetailsMap[accountName] = detail;
+        }
+      });
+      setCashflowDetails(cfDetailsMap);
+
+      const clDetailsMap: Record<string, string> = {};
+      clDetailsResult.rows.forEach(row => {
+        const accountName = row[0]?.trim();
+        const detail = row[1]?.trim() || '';
+        if (accountName) {
+          clDetailsMap[accountName] = detail;
+        }
+      });
+      setCashloanDetails(clDetailsMap);
+
+      const wcDetailsMap: Record<string, string> = {};
+      wcDetailsResult.rows.forEach(row => {
+        const accountName = row[0]?.trim();
+        const detail = row[1]?.trim() || '';
+        if (accountName) {
+          wcDetailsMap[accountName] = detail;
+        }
+      });
+      setWorkingCapitalDetails(wcDetailsMap);
 
       // Initialize with base data (100%) & initial recalculations
       setCashflowData(cfResult);
@@ -223,6 +262,7 @@ export default function Home() {
                         onExpandAllChange={(val) => setExpandAllGroups(prev => ({ ...prev, cashflow: val }))}
                         headerStyle="dark"
                         useNewLayout={true}
+                        detailsData={cashflowDetails}
                       />
                     )}
                   </div>
@@ -242,6 +282,7 @@ export default function Home() {
                         expandAll={true}
                         headerStyle="dark"
                         useNewLayout={true}
+                        detailsData={cashloanDetails}
                       />
                     )}
                   </div>
@@ -268,6 +309,7 @@ export default function Home() {
                         onExpandAllChange={(val) => setExpandAllGroups(prev => ({ ...prev, workingcapital: val }))}
                         headerStyle="dark"
                         useNewLayout={true}
+                        detailsData={workingCapitalDetails}
                       />
                     )}
                   </div>
