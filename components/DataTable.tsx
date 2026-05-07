@@ -177,7 +177,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   // 새로운 레이아웃의 헤더 구조 정의
   const newLayoutHeaders = useNewLayout && !showMonthly ? [
     { label: '계정과목', rowSpan: 2, colSpan: 1 },
-    { label: '2025년(합계)', rowSpan: 2, colSpan: 1 },
+    { label: '전년', rowSpan: 2, colSpan: 1 },
     { label: 'RF_03', rowSpan: 1, colSpan: 2, children: [
       { label: 'RF_03', rowSpan: 1, colSpan: 1 },
       { label: 'RF_03 - 전년', rowSpan: 1, colSpan: 1 },
@@ -222,7 +222,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[100px]'
                   )}
                 >
-                  2025년(합계)
+                  전년
                 </th>
                 <th
                   colSpan={2}
