@@ -14,16 +14,19 @@ export default function Home() {
   const [baseCashflowData, setBaseCashflowData] = useState<ParsedData | null>(null);
   const [baseCashloanData, setBaseCashloanData] = useState<ParsedData | null>(null);
   const [baseWorkingCapitalData, setBaseWorkingCapitalData] = useState<ParsedData | null>(null);
+  const [baseSteCashflowData, setBaseSteCashflowData] = useState<ParsedData | null>(null);
   
   // Details data for each table
   const [cashflowDetails, setCashflowDetails] = useState<Record<string, string>>({});
   const [cashloanDetails, setCashloanDetails] = useState<Record<string, string>>({});
   const [workingCapitalDetails, setWorkingCapitalDetails] = useState<Record<string, string>>({});
+  const [steCashflowDetails, setSteCashflowDetails] = useState<Record<string, string>>({});
   
   // Displayed data (recalculated based on growth rate)
   const [cashflowData, setCashflowData] = useState<ParsedData | null>(null);
   const [cashloanData, setCashloanData] = useState<ParsedData | null>(null);
   const [workingCapitalData, setWorkingCapitalData] = useState<ParsedData | null>(null);
+  const [steCashflowData, setSteCashflowData] = useState<ParsedData | null>(null);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,11 +43,13 @@ export default function Home() {
     cashflow: true,
     cashloan: true,
     workingcapital: true,
+    stecashflow: true,
   });
   const [expandAllGroups, setExpandAllGroups] = useState<Record<string, boolean>>({
     cashflow: false,
     cashloan: false,
     workingcapital: false,
+    stecashflow: false,
   });
 
   const fetchData = async () => {
@@ -52,18 +57,21 @@ export default function Home() {
     setError(null);
     try {
       // Load only the base files (standard 130% data)
-      const [cfResult, clResult, wcResult, cfDetailsResult, clDetailsResult, wcDetailsResult] = await Promise.all([
+      const [cfResult, clResult, wcResult, steResult, cfDetailsResult, clDetailsResult, wcDetailsResult, steDetailsResult] = await Promise.all([
         fetchAndParseCsv(`/data/cashflow.csv`),
         fetchAndParseCsv(`/data/cashloan.csv`),
         fetchAndParseCsv(`/data/workingcapital.csv`),
+        fetchAndParseCsv(`/data/stecashflow.csv`),
         fetchAndParseCsv(`/data/cashflow_details.csv`),
         fetchAndParseCsv(`/data/cashloan_details.csv`),
         fetchAndParseCsv(`/data/workingcapital_details.csv`),
+        fetchAndParseCsv(`/data/stecashflow_details.csv`),
       ]);
       
       setBaseCashflowData(cfResult);
       setBaseCashloanData(clResult); // Save base cashloan data
       setBaseWorkingCapitalData(wcResult); // Save base working capital data
+      setBaseSteCashflowData(steResult); // Save base STE cashflow data
 
       // Parse details data into maps
       const cfDetailsMap: Record<string, string> = {};
@@ -96,11 +104,22 @@ export default function Home() {
       });
       setWorkingCapitalDetails(wcDetailsMap);
 
+      const steDetailsMap: Record<string, string> = {};
+      steDetailsResult.rows.forEach(row => {
+        const accountName = row[0]?.trim();
+        const detail = row[1]?.trim() || '';
+        if (accountName) {
+          steDetailsMap[accountName] = detail;
+        }
+      });
+      setSteCashflowDetails(steDetailsMap);
+
       // Initialize with base data (100%) & initial recalculations
       setCashflowData(cfResult);
       setCashloanData(clResult);
       // 운전자본표 합계 초기 재계산 (매출 변동 없음 -> 델타 0)
       setWorkingCapitalData(recalculateWorkingCapital(wcResult, cfResult, cfResult));
+      setSteCashflowData(steResult);
       
       setLastUpdated(new Date());
     } catch (err) {
@@ -134,8 +153,14 @@ export default function Home() {
         const updatedWC = recalculateWorkingCapital(baseWorkingCapitalData, baseCashflowData, recalculatedCF);
         setWorkingCapitalData(updatedWC);
       }
+
+      // 4. Recalculate STE Cash Flow (same logic as 현금흐름표)
+      if (baseSteCashflowData) {
+        const recalculatedSTE = recalculateCashflow(baseSteCashflowData, growthRate);
+        setSteCashflowData(recalculatedSTE);
+      }
     }
-  }, [growthRate, baseCashflowData, baseCashloanData, baseWorkingCapitalData]);
+  }, [growthRate, baseCashflowData, baseCashloanData, baseWorkingCapitalData, baseSteCashflowData]);
 
   const toggleTable = (tableId: string) => {
     setExpandedTables(prev => ({
@@ -247,7 +272,7 @@ export default function Home() {
                   <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
 
                     <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center gap-3">
-                      <h2 className="text-lg font-bold text-gray-900">현금흐름표</h2>
+                      <h2 className="text-lg font-bold text-gray-900">STO 현금흐름표</h2>
                       <span className="text-sm text-blue-600 font-medium">(매출 {growthRate}% 가정)</span>
                       <button
                         onClick={() => toggleTable("cashflow")}
@@ -266,6 +291,35 @@ export default function Home() {
                         headerStyle="dark"
                         useNewLayout={true}
                         detailsData={cashflowDetails}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {/* STE Cash Flow Table */}
+                {steCashflowData && (
+                  <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+
+                    <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center gap-3">
+                      <h2 className="text-lg font-bold text-gray-900">STE 현금흐름표</h2>
+                      <span className="text-sm text-blue-600 font-medium">(매출 {growthRate}% 가정)</span>
+                      <button
+                        onClick={() => toggleTable("stecashflow")}
+                        className="px-3 py-1 bg-gray-700 text-white text-xs font-bold rounded hover:bg-gray-800 flex items-center gap-1 transition-colors"
+                      >
+                        {expandedTables.stecashflow ? "접기 ▼" : "펼치기 ▼"}
+                      </button>
+                    </div>
+                    {expandedTables.stecashflow && (
+                      <DataTable 
+                        headers={steCashflowData.headers} 
+                        rows={steCashflowData.rows}
+                        showMonthly={showMonthly}
+                        expandAll={expandAllGroups.stecashflow}
+                        onExpandAllChange={(val) => setExpandAllGroups(prev => ({ ...prev, stecashflow: val }))}
+                        headerStyle="dark"
+                        useNewLayout={true}
+                        detailsData={steCashflowDetails}
                       />
                     )}
                   </div>
