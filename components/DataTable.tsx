@@ -219,7 +219,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   className={cn(
                     'px-4 py-3 border font-bold whitespace-nowrap text-center',
                     headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                    'min-w-[100px]'
+                    'min-w-[120px]'
                   )}
                 >
                   전년
@@ -252,7 +252,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   className={cn(
                     'px-4 py-3 border font-bold whitespace-nowrap text-center',
                     headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                    'min-w-[100px]'
+                    'min-w-[120px]'
                   )}
                 >
                   RF_03
@@ -262,7 +262,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   className={cn(
                     'px-4 py-3 border font-bold whitespace-nowrap text-center',
                     headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                    'min-w-[100px]'
+                    'min-w-[120px]'
                   )}
                 >
                   RF_03 - 전년
@@ -272,7 +272,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   className={cn(
                     'px-4 py-3 border font-bold whitespace-nowrap text-center',
                     headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                    'min-w-[100px]'
+                    'min-w-[120px]'
                   )}
                 >
                   RF_04
@@ -282,7 +282,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   className={cn(
                     'px-4 py-3 border font-bold whitespace-nowrap text-center',
                     headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                    'min-w-[100px]'
+                    'min-w-[120px]'
                   )}
                 >
                   RF_04 - 전년
@@ -292,7 +292,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   className={cn(
                     'px-4 py-3 border font-bold whitespace-nowrap text-center',
                     headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                    'min-w-[100px]'
+                    'min-w-[120px]'
                   )}
                 >
                   RF_03대비 증감
