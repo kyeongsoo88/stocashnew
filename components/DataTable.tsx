@@ -145,8 +145,8 @@ export const DataTable: React.FC<DataTableProps> = ({
             if (next[n.id] === undefined) {
               changed = true;
               const name = n.data[0] || '';
-              // 영업활동, 매출수금, 로열티수금, 비용지출은 펼침 / 재무활동은 접힘
-              if (name.includes('영업활동') || name.includes('매출수금') || name.includes('로열티수금') || name.includes('비용지출')) {
+              // 영업활동, 매출수금, 로열티수금은 펼침 / 비용지출, 재무활동은 접힘
+              if (name.includes('영업활동') || name.includes('매출수금') || name.includes('로열티수금')) {
                 next[n.id] = true;
               } else {
                 next[n.id] = false;
