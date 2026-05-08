@@ -263,7 +263,7 @@ export default function Home() {
           ) : (
             <div
               className={`grid gap-8 h-full ${!showMonthly ? '' : 'grid-cols-1'}`}
-              style={!showMonthly ? { gridTemplateColumns: '7fr 3fr' } : undefined}
+              style={!showMonthly ? { gridTemplateColumns: '4fr 1fr' } : undefined}
             >
               {/* Left Column: Tables */}
               <div className={`${!showMonthly ? '' : 'col-span-12'} overflow-y-auto space-y-6 pr-4 pb-6`}>
