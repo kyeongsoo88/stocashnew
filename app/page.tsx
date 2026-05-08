@@ -272,7 +272,7 @@ export default function Home() {
                   <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
 
                     <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center gap-3">
-                      <h2 className="text-lg font-bold text-gray-900">STO 현금흐름표</h2>
+                      <h2 className="text-lg font-bold text-gray-900">STO 현금흐름표 (단위 : K $)</h2>
                       <span className="text-sm text-blue-600 font-medium">(매출 {growthRate}% 가정)</span>
                       <button
                         onClick={() => toggleTable("cashflow")}
@@ -301,7 +301,7 @@ export default function Home() {
                   <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
 
                     <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center gap-3">
-                      <h2 className="text-lg font-bold text-gray-900">STE 현금흐름표</h2>
+                      <h2 className="text-lg font-bold text-gray-900">STE 현금흐름표 (단위 : K $)</h2>
                       <span className="text-sm text-blue-600 font-medium">(매출 {growthRate}% 가정)</span>
                       <button
                         onClick={() => toggleTable("stecashflow")}
