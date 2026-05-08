@@ -27,11 +27,11 @@ interface TreeRow {
 
 // ── keyword sets ──────────────────────────────────────────────
 const LEVEL0_PARENTS     = ['영업활동', '재무활동', '로열티수금', '비용지출'];
-const LEVEL0_STANDALONE  = ['기초잔액', '기말잔액', 'Net Cash', '운전자본 합계', '매출채권', '재고자산', '매입채무'];
+const LEVEL0_STANDALONE  = ['기초잔액', '기말잔액', 'Net Cash', '운전자본 합계', '매출채권', '재고자산', '매입채무', 'STO 감자/배당'];
 const LEVEL1_OF_영업     = ['매출수금', '물품대 지출'];
 const LEVEL1_OF_재무     = ['본사차입', 'STE감자', 'STE청산', 'STE지분매입', '본사차입상환'];
 const LEVEL1_OF_로열티수금 = ['Movin', 'SUGI', 'Benjamin', 'Silver', 'UBC', 'BBUK', 'BDS'];
-const LEVEL1_OF_비용지출 = ['인건비', '지급수수료', 'STO 감자/배당', '법률비용', '광고선전비', '기타비용'];
+const LEVEL1_OF_비용지출 = ['인건비', '지급수수료', '법률비용', '광고선전비', '기타비용'];
 const LEVEL2_OF_매출수금 = ['온라인(US+EU)', '홀세일', '라이선스'];
 
 function buildTree(rows: string[][]): TreeRow[] {
