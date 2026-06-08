@@ -114,11 +114,10 @@ export default function Home() {
       });
       setSteCashflowDetails(steDetailsMap);
 
-      // Initialize with base data (100%) & initial recalculations
+      // Initialize with base data (100%) - CSV 원본 그대로 사용
       setCashflowData(cfResult);
       setCashloanData(clResult);
-      // 운전자본표 합계 초기 재계산 (매출 변동 없음 -> 델타 0)
-      setWorkingCapitalData(recalculateWorkingCapital(wcResult, cfResult, cfResult));
+      setWorkingCapitalData(wcResult);
       setSteCashflowData(steResult);
       
       setLastUpdated(new Date());
@@ -144,14 +143,22 @@ export default function Home() {
 
       // 2. Update Cash Loan Balance using recalculated Cash Flow
       if (baseCashloanData) {
-        const updatedCL = updateCashloanFromCashflow(baseCashloanData, recalculatedCF);
-        setCashloanData(updatedCL);
+        if (growthRate === 100) {
+          setCashloanData(baseCashloanData);
+        } else {
+          const updatedCL = updateCashloanFromCashflow(baseCashloanData, recalculatedCF);
+          setCashloanData(updatedCL);
+        }
       }
 
       // 3. Recalculate Working Capital (매출 변동에 따른 재고 감소 + 합계 재계산)
       if (baseWorkingCapitalData) {
-        const updatedWC = recalculateWorkingCapital(baseWorkingCapitalData, baseCashflowData, recalculatedCF);
-        setWorkingCapitalData(updatedWC);
+        if (growthRate === 100) {
+          setWorkingCapitalData(baseWorkingCapitalData);
+        } else {
+          const updatedWC = recalculateWorkingCapital(baseWorkingCapitalData, baseCashflowData, recalculatedCF);
+          setWorkingCapitalData(updatedWC);
+        }
       }
 
       // 4. Recalculate STE Cash Flow (same logic as 현금흐름표)
