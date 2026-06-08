@@ -217,15 +217,15 @@ export const DataTable: React.FC<DataTableProps> = ({
   const newLayoutHeaders = useNewLayout && !showMonthly ? [
     { label: '계정과목', rowSpan: 2, colSpan: 1 },
     { label: '전년', rowSpan: 2, colSpan: 1 },
-    { label: 'RF_03', rowSpan: 1, colSpan: 2, children: [
-      { label: 'RF_03', rowSpan: 1, colSpan: 1 },
-      { label: 'RF_03 - 전년', rowSpan: 1, colSpan: 1 },
-    ]},
-    { label: 'RF_04', rowSpan: 1, colSpan: 5, children: [
+    { label: 'RF_04', rowSpan: 1, colSpan: 2, children: [
       { label: 'RF_04', rowSpan: 1, colSpan: 1 },
       { label: 'RF_04 - 전년', rowSpan: 1, colSpan: 1 },
-      { label: 'RF_03대비 증감', rowSpan: 1, colSpan: 1 },
-      { label: 'RF_03대비(%)', rowSpan: 1, colSpan: 1 },
+    ]},
+    { label: 'RF_05', rowSpan: 1, colSpan: 5, children: [
+      { label: 'RF_05', rowSpan: 1, colSpan: 1 },
+      { label: 'RF_05 - 전년', rowSpan: 1, colSpan: 1 },
+      { label: 'RF_04대비 증감', rowSpan: 1, colSpan: 1 },
+      { label: 'RF_04대비(%)', rowSpan: 1, colSpan: 1 },
       { label: '상세', rowSpan: 1, colSpan: 1 },
     ]},
   ] : null;
@@ -271,7 +271,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
                   )}
                 >
-                  RF_03
+                  RF_04
                 </th>
                 <th
                   colSpan={5}
@@ -281,31 +281,11 @@ export const DataTable: React.FC<DataTableProps> = ({
                     headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
                   )}
                 >
-                  RF_04
+                  RF_05
                 </th>
               </tr>
               {/* 두 번째 행: 소컬럼 */}
               <tr>
-                <th
-                  style={{ backgroundColor: headerBg, color: headerText }}
-                  className={cn(
-                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
-                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                    'min-w-[120px]'
-                  )}
-                >
-                  RF_03
-                </th>
-                <th
-                  style={{ backgroundColor: headerBg, color: headerText }}
-                  className={cn(
-                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
-                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                    'min-w-[120px]'
-                  )}
-                >
-                  RF_03 - 전년
-                </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
                   className={cn(
@@ -334,7 +314,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[120px]'
                   )}
                 >
-                  RF_03대비 증감
+                  RF_05
                 </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
@@ -344,7 +324,27 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[120px]'
                   )}
                 >
-                  RF_03대비(%)
+                  RF_05 - 전년
+                </th>
+                <th
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                    'min-w-[120px]'
+                  )}
+                >
+                  RF_04대비 증감
+                </th>
+                <th
+                  style={{ backgroundColor: headerBg, color: headerText }}
+                  className={cn(
+                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
+                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                    'min-w-[120px]'
+                  )}
+                >
+                  RF_04대비(%)
                 </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
