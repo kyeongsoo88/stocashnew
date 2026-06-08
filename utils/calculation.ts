@@ -19,6 +19,11 @@ const formatNumber = (num: number): string => {
  * 100% 성장 기준 데이터를 바탕으로, 특정 성장률(targetRate)일 때의 현금흐름표를 재계산
  */
 export const recalculateCashflow = (baseData: ParsedData, targetRate: number): ParsedData => {
+  // 100%일 때는 재계산 없이 원본 반환 (반올림 오차 방지)
+  if (targetRate === 100) {
+    return { headers: baseData.headers, rows: baseData.rows.map(row => [...row]) };
+  }
+
   // 깊은 복사로 원본 보존
   const newRows = baseData.rows.map(row => [...row]);
   
