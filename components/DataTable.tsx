@@ -472,10 +472,15 @@ export const DataTable: React.FC<DataTableProps> = ({
                     const val     = formatNum(cell);
                     const neg     = ci !== 0 && isNeg(cell);
                     const isDetailCol = isLast && useNewLayout && !showMonthly;
+                    const isSteYellow =
+                      node.data[0]?.includes('STE주주환원') &&
+                      ci === 4 &&
+                      useNewLayout && !showMonthly;
 
                     return (
                       <td
                         key={ci}
+                        style={isSteYellow ? { backgroundColor: '#fef9c3' } : {}}
                         className={cn(
                           'px-4 py-3 border border-gray-300 whitespace-nowrap font-bold',
                           neg && !isDetailCol ? 'text-red-600' : 'text-gray-900',
