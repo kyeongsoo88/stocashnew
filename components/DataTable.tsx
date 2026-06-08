@@ -473,7 +473,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     const neg     = ci !== 0 && isNeg(cell);
                     const isDetailCol = isLast && useNewLayout && !showMonthly;
                     const isSteYellow =
-                      node.data[0]?.includes('STE주주환원') &&
+                      (node.data[0]?.includes('STE주주환원') || node.data[0]?.includes('26년 기말 주주환원')) &&
                       ci === 4 &&
                       useNewLayout && !showMonthly;
 
