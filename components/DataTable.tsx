@@ -41,9 +41,8 @@ const LEVEL1_OF_비용지출 = ['인건비', '지급수수료', '법률비용', 
 const LEVEL2_OF_매출수금 = ['온라인(US+EU)', '홀세일', '라이선스'];
 
 function getFinanceGroup(name: string): number {
-  if (name.includes('소계')) return -1;
   if (name.includes('SPA')) return 0;
-  if (name.includes('운영자금') || name.includes('STE주주환원')) return 1;
+  if (name.includes('운영자금') || name.includes('STE주주환원') || name.includes('소계')) return 1;
   if (name.includes('STE지분매입') || name.includes('STE감자')) return 2;
   return -1;
 }
