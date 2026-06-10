@@ -265,10 +265,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   const newLayoutHeaders = useNewLayout && !showMonthly ? [
     { label: '계정과목', rowSpan: 2, colSpan: 1 },
     { label: '전년', rowSpan: 2, colSpan: 1 },
-    { label: 'RF_04', rowSpan: 1, colSpan: 2, children: [
-      { label: 'RF_04', rowSpan: 1, colSpan: 1 },
-      { label: 'RF_04 - 전년', rowSpan: 1, colSpan: 1 },
-    ]},
+    { label: 'RF_04', rowSpan: 2, colSpan: 1 },
     { label: 'RF_05', rowSpan: 1, colSpan: 4, children: [
       { label: 'RF_05', rowSpan: 1, colSpan: 1 },
       { label: 'RF_05 - 전년', rowSpan: 1, colSpan: 1 },
@@ -311,11 +308,12 @@ export const DataTable: React.FC<DataTableProps> = ({
                   전년
                 </th>
                 <th
-                  colSpan={2}
+                  rowSpan={2}
                   style={{ backgroundColor: headerBg, color: headerText }}
                   className={cn(
                     'px-4 py-3 border font-bold whitespace-nowrap text-center',
                     headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
+                    'min-w-[120px]'
                   )}
                 >
                   RF_04
@@ -333,26 +331,6 @@ export const DataTable: React.FC<DataTableProps> = ({
               </tr>
               {/* 두 번째 행: 소컬럼 */}
               <tr>
-                <th
-                  style={{ backgroundColor: headerBg, color: headerText }}
-                  className={cn(
-                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
-                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                    'min-w-[120px]'
-                  )}
-                >
-                  RF_04
-                </th>
-                <th
-                  style={{ backgroundColor: headerBg, color: headerText }}
-                  className={cn(
-                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
-                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                    'min-w-[120px]'
-                  )}
-                >
-                  RF_04 - 전년
-                </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
                   className={cn(
@@ -488,7 +466,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                   account,
                   y25Total,
                   y26Plan,
-                  formatNumber(planMinusPrevYear),
                   y26Actual,
                   formatNumber(rollingMinusPrevYear),
                   formatNumber(planVsActual),
@@ -514,11 +491,11 @@ export const DataTable: React.FC<DataTableProps> = ({
                     const val     = formatNum(cell);
                     const neg     = ci !== 0 && isNeg(cell);
                     const isDetailCol = isLast && useNewLayout && !showMonthly;
-                    const isDeltaCol  = useNewLayout && !showMonthly && (ci === 3 || ci === 5 || ci === 6);
+                    const isDeltaCol  = useNewLayout && !showMonthly && (ci === 4 || ci === 5);
                     const displayVal  = isDeltaCol ? formatDelta(cell) : val;
                     const isSteYellow =
                       (node.data[0]?.includes('STE주주환원') || node.data[0]?.includes('26년 기말 주주환원')) &&
-                      ci === 4 &&
+                      ci === 3 &&
                       useNewLayout && !showMonthly;
 
                     return (
