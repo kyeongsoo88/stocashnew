@@ -41,6 +41,7 @@ const LEVEL1_OF_비용지출 = ['인건비', '지급수수료', '법률비용', 
 const LEVEL2_OF_매출수금 = ['온라인(US+EU)', '홀세일', '라이선스'];
 
 function getFinanceGroup(name: string): number {
+  if (name.includes('소계')) return -1;
   if (name.includes('SPA')) return 0;
   if (name.includes('운영자금') || name.includes('STE주주환원')) return 1;
   if (name.includes('STE지분매입') || name.includes('STE감자')) return 2;
@@ -491,7 +492,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'group transition-colors',
                     hasChildren && 'cursor-pointer',
                     isSpecial ? 'bg-blue-50 hover:bg-blue-100' :
-                    isSubtotal ? 'bg-green-50 hover:bg-green-100 border-t-2 border-t-green-300' :
+                    isSubtotal ? 'bg-white hover:bg-gray-50 border-t-2 border-t-green-300' :
                     'bg-white hover:bg-gray-50',
                   )}
                 >
@@ -519,7 +520,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                           ci === 0 && 'sticky left-0 z-10 text-left shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]',
                           ci === 0 && indent,
                           ci === 0 && isSpecial && 'bg-blue-50 group-hover:bg-blue-100',
-                          ci === 0 && isSubtotal && 'bg-green-50 group-hover:bg-green-100',
+                          ci === 0 && isSubtotal && 'bg-white group-hover:bg-gray-50',
                           ci === 0 && !isSpecial && !isSubtotal && 'bg-white group-hover:bg-gray-50',
                           // detail column (상세)
                           isDetailCol && 'text-left text-sm !text-gray-900 !font-normal',
