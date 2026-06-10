@@ -221,11 +221,10 @@ export const DataTable: React.FC<DataTableProps> = ({
       { label: 'RF_04', rowSpan: 1, colSpan: 1 },
       { label: 'RF_04 - 전년', rowSpan: 1, colSpan: 1 },
     ]},
-    { label: 'RF_05', rowSpan: 1, colSpan: 5, children: [
+    { label: 'RF_05', rowSpan: 1, colSpan: 4, children: [
       { label: 'RF_05', rowSpan: 1, colSpan: 1 },
       { label: 'RF_05 - 전년', rowSpan: 1, colSpan: 1 },
       { label: 'RF_04대비 증감', rowSpan: 1, colSpan: 1 },
-      { label: 'RF_04대비(%)', rowSpan: 1, colSpan: 1 },
       { label: '상세', rowSpan: 1, colSpan: 1 },
     ]},
   ] : null;
@@ -274,7 +273,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   RF_04
                 </th>
                 <th
-                  colSpan={5}
+                  colSpan={4}
                   style={{ backgroundColor: headerBg, color: headerText }}
                   className={cn(
                     'px-4 py-3 border font-bold whitespace-nowrap text-center',
@@ -335,16 +334,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                   )}
                 >
                   RF_04대비 증감
-                </th>
-                <th
-                  style={{ backgroundColor: headerBg, color: headerText }}
-                  className={cn(
-                    'px-4 py-3 border font-bold whitespace-nowrap text-center',
-                    headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
-                    'min-w-[120px]'
-                  )}
-                >
-                  RF_04대비(%)
                 </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
@@ -438,7 +427,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                 const planMinusPrevYear = nPlan - n25;
                 const rollingMinusPrevYear = nActual - n25;
                 const planVsActual = nActual - nPlan;
-                const planRatio = nPlan !== 0 ? (nActual / nPlan * 100) : 0;
 
                 // 계정과목에 대한 상세 설명 가져오기
                 const accountName = account.trim();
@@ -452,7 +440,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                   y26Actual,
                   formatNumber(rollingMinusPrevYear),
                   formatNumber(planVsActual),
-                  planRatio.toFixed(0) + '%',
                   detailText,
                 ];
               }
@@ -482,15 +469,16 @@ export const DataTable: React.FC<DataTableProps> = ({
                         key={ci}
                         style={isSteYellow ? { backgroundColor: '#fef9c3' } : {}}
                         className={cn(
-                          'px-4 py-3 border border-gray-300 whitespace-nowrap font-bold',
+                          'px-4 py-3 border border-gray-300 whitespace-nowrap',
+                          hasChildren || isSpecial || node.level === 0 ? 'font-bold' : 'font-normal',
                           neg && !isDetailCol ? 'text-red-600' : 'text-gray-900',
                           // first column
                           ci === 0 && 'sticky left-0 z-10 text-left shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]',
                           ci === 0 && indent,
                           ci === 0 && isSpecial && 'bg-blue-50 group-hover:bg-blue-100',
                           ci === 0 && !isSpecial && 'bg-white group-hover:bg-gray-50',
-                          // detail column (상세) - 검정색 볼드체
-                          isDetailCol && 'text-left text-sm !text-gray-900 !font-bold',
+                          // detail column (상세)
+                          isDetailCol && 'text-left text-sm !text-gray-900 !font-normal',
                           // numeric cols
                           ci !== 0 && !isLast && 'text-right',
                           // last col (except detail)
