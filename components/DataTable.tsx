@@ -534,8 +534,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                           (node.level === 0 || isSpecial) && !isDeltaCol ? 'font-bold' : 'font-normal',
                           neg && !isDetailCol ? 'text-red-600' : 'text-gray-900',
                           // first column
-                          ci === 0 && !isSubtotal && 'sticky left-0 z-10 text-left shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]',
-                          ci === 0 && isSubtotal && 'sticky left-0 z-10 text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]',
+                          ci === 0 && 'sticky left-0 z-10 text-left shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]',
                           ci === 0 && indent,
                           ci === 0 && isSpecial    && 'bg-blue-50 group-hover:bg-blue-100',
                           ci === 0 && isSubtotalOp  && 'bg-gray-100 group-hover:bg-gray-200',
@@ -554,7 +553,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                         )}
                       >
                         {ci === 0 ? (
-                          <span className={`inline-flex items-center gap-1${isSubtotal ? ' w-full justify-center' : ''}`}>
+                          <span className="inline-flex items-center gap-1">
                             {isSubtotal ? (node.data[0]?.includes('투자') ? '투자 소계' : '운영 소계') : displayVal}
                             {hasChildren && (
                               <span className="text-[10px] text-gray-700">
