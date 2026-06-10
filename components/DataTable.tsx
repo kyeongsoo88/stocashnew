@@ -206,6 +206,14 @@ export const DataTable: React.FC<DataTableProps> = ({
   };
   const isNeg = (v: string) => v.includes('(') || v.startsWith('-');
 
+  // +/- 표기 포맷 (RF_04-전년, RF_05-전년, RF_04대비 증감 컬럼용)
+  const formatDelta = (v: string): string => {
+    if (!v || v.trim() === '' || v === '0') return v || '';
+    if (v.includes('(') && v.includes(')')) return '-' + v.replace(/[()]/g, '');
+    if (v.startsWith('-')) return v;
+    return '+' + v;
+  };
+
   const flatRows = useMemo(() => flattenTree(tree, expanded), [tree, expanded]);
 
   if (!headers.length) return <div className="p-4 text-gray-900">No data available</div>;
@@ -459,6 +467,8 @@ export const DataTable: React.FC<DataTableProps> = ({
                     const val     = formatNum(cell);
                     const neg     = ci !== 0 && isNeg(cell);
                     const isDetailCol = isLast && useNewLayout && !showMonthly;
+                    const isDeltaCol  = useNewLayout && !showMonthly && (ci === 3 || ci === 5 || ci === 6);
+                    const displayVal  = isDeltaCol ? formatDelta(cell) : val;
                     const isSteYellow =
                       (node.data[0]?.includes('STE주주환원') || node.data[0]?.includes('26년 기말 주주환원')) &&
                       ci === 4 &&
@@ -499,19 +509,20 @@ export const DataTable: React.FC<DataTableProps> = ({
                                   flexShrink: 0,
                                   textShadow: `2px 0 0 ${FINANCE_GROUP_COLORS[(node.financeGroup ?? 0) % FINANCE_GROUP_COLORS.length]}, -2px 0 0 ${FINANCE_GROUP_COLORS[(node.financeGroup ?? 0) % FINANCE_GROUP_COLORS.length]}, 0 1px 0 ${FINANCE_GROUP_COLORS[(node.financeGroup ?? 0) % FINANCE_GROUP_COLORS.length]}`,
                                   letterSpacing: '-1px',
+                                  WebkitTextStroke: `1.5px ${FINANCE_GROUP_COLORS[(node.financeGroup ?? 0) % FINANCE_GROUP_COLORS.length]}`,
                                 }}
                               >
                                 {node.groupPosition === 'first' ? '┌' : node.groupPosition === 'last' ? '└' : '│'}
                               </span>
                             )}
-                            {val}
+                            {displayVal}
                             {hasChildren && (
                               <span className="text-[10px] text-gray-700">
                                 {isOpen ? '▼' : '▶'}
                               </span>
                             )}
                           </span>
-                        ) : val}
+                        ) : displayVal}
                       </td>
                     );
                   })}
