@@ -29,6 +29,7 @@ interface TreeRow {
   isGroupCenter?: boolean;
   groupLabelBottom?: string;
   groupLabelTop?: string;
+  alwaysVisible?: boolean; // 부모 접힘 여부와 무관하게 항상 표시
 }
 
 // ── keyword sets ──────────────────────────────────────────────
@@ -84,8 +85,10 @@ function buildTree(rows: string[][]): TreeRow[] {
 
     } else if (isL1_재무 && l0Parent?.data[0]?.includes('재무활동')) {
       const colorIdx = l0Parent.children.length;
-      l1Parent = { id, data: row, children: [], level: 1, colorIdx };
-      l0Parent.children.push(l1Parent);
+      const node: TreeRow = { id, data: row, children: [], level: 1, colorIdx };
+      if (isSubtotalRow) node.alwaysVisible = true;
+      if (!isSubtotalRow) l1Parent = node;
+      l0Parent.children.push(node);
 
     } else if (isL1_로열티 && l0Parent?.data[0]?.includes('로열티수금')) {
       const colorIdx = l0Parent.children.length;
@@ -154,15 +157,23 @@ interface FlatRow {
 
 function flattenTree(nodes: TreeRow[], expanded: Record<string, boolean>): FlatRow[] {
   const result: FlatRow[] = [];
-  function walk(nodes: TreeRow[]) {
+  function walk(nodes: TreeRow[], parentIsExpanded: boolean) {
     nodes.forEach(node => {
+      // 부모가 펼쳐졌거나 alwaysVisible이면 포함
+      if (!parentIsExpanded && !node.alwaysVisible) return;
       result.push({ node, visible: true });
       if (node.children.length > 0 && (expanded[node.id] ?? false)) {
-        walk(node.children);
+        walk(node.children, true);
       }
     });
   }
-  walk(nodes);
+  // 최상위 노드는 항상 표시
+  nodes.forEach(node => {
+    result.push({ node, visible: true });
+    if (node.children.length > 0) {
+      walk(node.children, expanded[node.id] ?? false);
+    }
+  });
   return result;
 }
 
@@ -208,8 +219,8 @@ export const DataTable: React.FC<DataTableProps> = ({
             if (next[n.id] === undefined) {
               changed = true;
               const name = n.data[0] || '';
-              // 영업활동, 로열티수금, 재무활동은 펼침 / 매출수금, 비용지출은 접힘
-              if (name.includes('영업활동') || name.includes('로열티수금') || name.includes('재무활동')) {
+              // 영업활동, 로열티수금은 펼침 / 재무활동, 매출수금, 비용지출은 접힘
+              if (name.includes('영업활동') || name.includes('로열티수금')) {
                 next[n.id] = true;
               } else {
                 next[n.id] = false;
@@ -493,8 +504,8 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'group transition-colors',
                     hasChildren && 'cursor-pointer',
                     isSpecial    ? 'bg-blue-50 hover:bg-blue-100' :
-                    isSubtotalOp ? 'bg-emerald-50 hover:bg-emerald-100' :
-                    isSubtotalInv ? 'bg-sky-50 hover:bg-sky-100' :
+                    isSubtotalOp ? 'bg-gray-100 hover:bg-gray-200' :
+                    isSubtotalInv ? 'bg-gray-100 hover:bg-gray-200' :
                     'bg-white hover:bg-gray-50',
                   )}
                 >
@@ -515,10 +526,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                         key={ci}
                         style={{
                           ...(isSteYellow ? { backgroundColor: '#fef9c3' } :
-                             isSubtotalOp  ? { backgroundColor: '#ecfdf5' } :
-                             isSubtotalInv ? { backgroundColor: '#e0f2fe' } :
-                             (ci === 0 && node.financeGroup === 1 && !isSubtotal) ? { backgroundColor: '#ecfdf5' } :
-                             (ci === 0 && (node.financeGroup === 0 || node.financeGroup === 2) && !isSubtotal) ? { backgroundColor: '#e0f2fe' } :
+                             (isSubtotalOp || isSubtotalInv) ? { backgroundColor: '#f3f4f6' } :
                              {}),
                         }}
                         className={cn(
@@ -530,8 +538,8 @@ export const DataTable: React.FC<DataTableProps> = ({
                           ci === 0 && isSubtotal && 'sticky left-0 z-10 text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]',
                           ci === 0 && indent,
                           ci === 0 && isSpecial    && 'bg-blue-50 group-hover:bg-blue-100',
-                          ci === 0 && isSubtotalOp  && 'bg-emerald-50 group-hover:bg-emerald-100',
-                          ci === 0 && isSubtotalInv && 'bg-sky-50 group-hover:bg-sky-100',
+                          ci === 0 && isSubtotalOp  && 'bg-gray-100 group-hover:bg-gray-200',
+                          ci === 0 && isSubtotalInv && 'bg-gray-100 group-hover:bg-gray-200',
                           ci === 0 && !isSpecial && !isSubtotal && 'bg-white group-hover:bg-gray-50',
                           // detail column (상세)
                           isDetailCol && 'text-left text-sm !text-gray-900 !font-normal',
@@ -540,8 +548,8 @@ export const DataTable: React.FC<DataTableProps> = ({
                           // last col (except detail)
                           isLast && !isDetailCol && 'text-right',
                           isLast && isSpecial     && 'bg-blue-50 group-hover:bg-blue-100',
-                          isLast && isSubtotalOp  && 'bg-emerald-50 group-hover:bg-emerald-100',
-                          isLast && isSubtotalInv && 'bg-sky-50 group-hover:bg-sky-100',
+                          isLast && isSubtotalOp  && 'bg-gray-100 group-hover:bg-gray-200',
+                          isLast && isSubtotalInv && 'bg-gray-100 group-hover:bg-gray-200',
                           isLast && !isSpecial && !isSubtotal && 'bg-white group-hover:bg-gray-50',
                         )}
                       >
