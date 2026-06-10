@@ -26,13 +26,16 @@ interface TreeRow {
   colorIdx?: number;
   financeGroup?: number;
   groupPosition?: 'first' | 'middle' | 'last' | 'only';
+  isGroupCenter?: boolean;
+  groupLabelBottom?: string;
+  groupLabelTop?: string;
 }
 
 // ── keyword sets ──────────────────────────────────────────────
 const LEVEL0_PARENTS     = ['영업활동', '재무활동', '로열티수금', '비용지출'];
 const LEVEL0_STANDALONE  = ['기초잔액', '기말잔액', 'Net Cash', '운전자본 합계', '매출채권', '재고자산', '매입채무', 'STO 감자/배당'];
 const LEVEL1_OF_영업     = ['매출수금', '물품대 지출'];
-const LEVEL1_OF_재무     = ['본사차입', 'STE감자/배당', 'STE주주환원', 'STE지분매입', '본사차입상환'];
+const LEVEL1_OF_재무     = ['본사차입', 'STE감자/배당', 'STE주주환원', 'STE지분매입', '본사차입상환', '재무활동_운영자금'];
 const LEVEL1_OF_로열티수금 = ['Movin', 'SUGI', 'Benjamin', 'Silver', 'UBC', 'BBUK', 'BDS'];
 const LEVEL1_OF_비용지출 = ['인건비', '지급수수료', '법률비용', '광고선전비', '기타비용'];
 const LEVEL2_OF_매출수금 = ['온라인(US+EU)', '홀세일', '라이선스'];
@@ -53,7 +56,8 @@ function buildTree(rows: string[][]): TreeRow[] {
     const name = (row[0] || '').trim();
     const id   = name + '_' + index;
 
-    const isL0Parent    = LEVEL0_PARENTS.some(k => name.includes(k));
+    const isSubtotalRow = name.includes('소계');
+    const isL0Parent    = !isSubtotalRow && LEVEL0_PARENTS.some(k => name.includes(k));
     const isL0Standalone= LEVEL0_STANDALONE.some(k => name.includes(k));
     const isL1_영업     = LEVEL1_OF_영업.some(k => name.includes(k));
     const isL1_재무     = LEVEL1_OF_재무.some(k => name.includes(k));
@@ -113,6 +117,31 @@ function buildTree(rows: string[][]): TreeRow[] {
       else if (nextG !== g) child.groupPosition = 'last';
       else child.groupPosition = 'middle';
     });
+
+    // 각 그룹의 라벨 배치 마킹 (짝수: 두 셀에 split, 홀수: 가운데 셀에 통으로)
+    const groupItems: Record<number, TreeRow[]> = {};
+    children.forEach(child => {
+      if (child.financeGroup !== undefined) {
+        if (!groupItems[child.financeGroup]) groupItems[child.financeGroup] = [];
+        groupItems[child.financeGroup].push(child);
+      }
+    });
+    const GROUP_LABEL_MAP: Record<number, string> = { 0: 'SPA', 1: '운영', 2: 'STE' };
+    // 모든 그룹: 짝수면 두 셀에 split, 홀수면 가운데 셀에 통으로
+    Object.entries(groupItems).forEach(([gStr, items]) => {
+      const g = parseInt(gStr);
+      const label = GROUP_LABEL_MAP[g] ?? '';
+      if (items.length % 2 === 0) {
+        const lowerIdx = items.length / 2 - 1;
+        const upperIdx = items.length / 2;
+        const mid = Math.ceil(label.length / 2);
+        items[lowerIdx].groupLabelBottom = label.slice(0, mid);
+        items[upperIdx].groupLabelTop = label.slice(mid);
+      } else {
+        const centerIdx = Math.floor((items.length - 1) / 2);
+        items[centerIdx].isGroupCenter = true;
+      }
+    });
   });
 
   return roots;
@@ -141,8 +170,9 @@ function flattenTree(nodes: TreeRow[], expanded: Record<string, boolean>): FlatR
 // ── indent per level ──────────────────────────────────────────
 const INDENT = ['pl-4', 'pl-10', 'pl-16'];
 
-// ── 재무활동 group bracket colors ────────────────────────────
+// ── 재무활동 group bracket colors & labels ───────────────────
 const FINANCE_GROUP_COLORS = ['#0000ff', '#00aa00', '#cc00cc']; // group0: blue, group1: green, group2: purple
+const FINANCE_GROUP_LABELS = ['SPA', '운영', 'STE'];
 
 export const DataTable: React.FC<DataTableProps> = ({
   headers,
@@ -391,6 +421,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                 node.data[0]?.includes('기초잔액') ||
                 node.data[0]?.includes('기말잔액') ||
                 node.data[0]?.includes('Net Cash');
+              const isSubtotal  = node.data[0]?.includes('소계');
 
               const indent = INDENT[node.level] ?? 'pl-4';
 
@@ -459,7 +490,9 @@ export const DataTable: React.FC<DataTableProps> = ({
                   className={cn(
                     'group transition-colors',
                     hasChildren && 'cursor-pointer',
-                    isSpecial ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50',
+                    isSpecial ? 'bg-blue-50 hover:bg-blue-100' :
+                    isSubtotal ? 'bg-green-50 hover:bg-green-100 border-t-2 border-t-green-300' :
+                    'bg-white hover:bg-gray-50',
                   )}
                 >
                   {displayCells.map((cell, ci) => {
@@ -480,13 +513,14 @@ export const DataTable: React.FC<DataTableProps> = ({
                         style={isSteYellow ? { backgroundColor: '#fef9c3' } : {}}
                         className={cn(
                           'px-4 py-3 border border-gray-300 whitespace-nowrap',
-                          hasChildren || isSpecial || node.level === 0 ? 'font-bold' : 'font-normal',
+                          (node.level === 0 || isSpecial) && !isDeltaCol ? 'font-bold' : 'font-normal',
                           neg && !isDetailCol ? 'text-red-600' : 'text-gray-900',
                           // first column
                           ci === 0 && 'sticky left-0 z-10 text-left shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]',
                           ci === 0 && indent,
                           ci === 0 && isSpecial && 'bg-blue-50 group-hover:bg-blue-100',
-                          ci === 0 && !isSpecial && 'bg-white group-hover:bg-gray-50',
+                          ci === 0 && isSubtotal && 'bg-green-50 group-hover:bg-green-100',
+                          ci === 0 && !isSpecial && !isSubtotal && 'bg-white group-hover:bg-gray-50',
                           // detail column (상세)
                           isDetailCol && 'text-left text-sm !text-gray-900 !font-normal',
                           // numeric cols
@@ -499,23 +533,72 @@ export const DataTable: React.FC<DataTableProps> = ({
                       >
                         {ci === 0 ? (
                           <span className="inline-flex items-center gap-1">
-                            {node.groupPosition && node.groupPosition !== 'only' && (
-                              <span
-                                style={{
-                                  color: FINANCE_GROUP_COLORS[(node.financeGroup ?? 0) % FINANCE_GROUP_COLORS.length],
-                                  fontWeight: '900',
-                                  fontSize: '22px',
-                                  lineHeight: 1,
-                                  flexShrink: 0,
-                                  textShadow: `2px 0 0 ${FINANCE_GROUP_COLORS[(node.financeGroup ?? 0) % FINANCE_GROUP_COLORS.length]}, -2px 0 0 ${FINANCE_GROUP_COLORS[(node.financeGroup ?? 0) % FINANCE_GROUP_COLORS.length]}, 0 1px 0 ${FINANCE_GROUP_COLORS[(node.financeGroup ?? 0) % FINANCE_GROUP_COLORS.length]}`,
-                                  letterSpacing: '-1px',
-                                  WebkitTextStroke: `1.5px ${FINANCE_GROUP_COLORS[(node.financeGroup ?? 0) % FINANCE_GROUP_COLORS.length]}`,
-                                }}
-                              >
-                                {node.groupPosition === 'first' ? '┌' : node.groupPosition === 'last' ? '└' : '│'}
-                              </span>
-                            )}
-                            {displayVal}
+                            {node.groupPosition && node.groupPosition !== 'only' && (() => {
+                              const gc = FINANCE_GROUP_COLORS[(node.financeGroup ?? 0) % FINANCE_GROUP_COLORS.length];
+                              return (
+                                <span className="inline-flex items-center gap-0.5" style={{ flexShrink: 0 }}>
+                                  {/* 라벨 영역: 너비 고정으로 꺽쇠 열맞춤 */}
+                                  <span style={{ width: '16px', display: 'inline-flex', justifyContent: 'center', overflow: 'visible' }}>
+                                    {/* 홀수 그룹: 가운데 셀에 라벨 통으로 */}
+                                    {node.isGroupCenter && (
+                                      <span style={{
+                                        writingMode: 'vertical-lr',
+                                        fontSize: '15px',
+                                        fontWeight: '900',
+                                        color: gc,
+                                        lineHeight: 1,
+                                        letterSpacing: '2px',
+                                        WebkitTextStroke: `0.5px ${gc}`,
+                                      }}>
+                                        {FINANCE_GROUP_LABELS[(node.financeGroup ?? 0) % FINANCE_GROUP_LABELS.length]}
+                                      </span>
+                                    )}
+                                    {/* 짝수 그룹: 하단 split 라벨 */}
+                                    {node.groupLabelBottom && (
+                                      <span style={{
+                                        writingMode: 'vertical-lr',
+                                        fontSize: '15px',
+                                        fontWeight: '900',
+                                        color: gc,
+                                        lineHeight: 1,
+                                        letterSpacing: '2px',
+                                        WebkitTextStroke: `0.5px ${gc}`,
+                                        transform: 'translateY(50%)',
+                                      }}>
+                                        {node.groupLabelBottom}
+                                      </span>
+                                    )}
+                                    {/* 짝수 그룹: 상단 split 라벨 */}
+                                    {node.groupLabelTop && (
+                                      <span style={{
+                                        writingMode: 'vertical-lr',
+                                        fontSize: '15px',
+                                        fontWeight: '900',
+                                        color: gc,
+                                        lineHeight: 1,
+                                        letterSpacing: '2px',
+                                        WebkitTextStroke: `0.5px ${gc}`,
+                                        transform: 'translateY(-50%)',
+                                      }}>
+                                        {node.groupLabelTop}
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span style={{
+                                    color: gc,
+                                    fontWeight: '900',
+                                    fontSize: '22px',
+                                    lineHeight: 1,
+                                    textShadow: `2px 0 0 ${gc}, -2px 0 0 ${gc}, 0 1px 0 ${gc}`,
+                                    letterSpacing: '-1px',
+                                    WebkitTextStroke: `1.5px ${gc}`,
+                                  }}>
+                                    {node.groupPosition === 'first' ? '┌' : node.groupPosition === 'last' ? '└' : '│'}
+                                  </span>
+                                </span>
+                              );
+                            })()}
+                            {isSubtotal ? '소계' : displayVal}
                             {hasChildren && (
                               <span className="text-[10px] text-gray-700">
                                 {isOpen ? '▼' : '▶'}
