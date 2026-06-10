@@ -490,7 +490,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'group transition-colors',
                     hasChildren && 'cursor-pointer',
                     isSpecial ? 'bg-blue-50 hover:bg-blue-100' :
-                    isSubtotal ? 'bg-white hover:bg-gray-50 border-t-2 border-t-green-300' :
+                    isSubtotal ? 'bg-white hover:bg-gray-50' :
                     'bg-white hover:bg-gray-50',
                   )}
                 >
