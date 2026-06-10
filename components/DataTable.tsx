@@ -128,19 +128,18 @@ function buildTree(rows: string[][]): TreeRow[] {
       }
     });
     const GROUP_LABEL_MAP: Record<number, string> = { 0: 'SPA', 1: '운영', 2: 'STE' };
-    // 모든 그룹: 짝수면 두 셀에 split, 홀수면 가운데 셀에 통으로
+    // 항상 두 셀에 split (항목 수 관계없이)
     Object.entries(groupItems).forEach(([gStr, items]) => {
       const g = parseInt(gStr);
       const label = GROUP_LABEL_MAP[g] ?? '';
-      if (items.length % 2 === 0) {
-        const lowerIdx = items.length / 2 - 1;
-        const upperIdx = items.length / 2;
+      if (items.length >= 2) {
+        const lowerIdx = Math.floor((items.length - 1) / 2);
+        const upperIdx = lowerIdx + 1;
         const mid = Math.ceil(label.length / 2);
         items[lowerIdx].groupLabelBottom = label.slice(0, mid);
         items[upperIdx].groupLabelTop = label.slice(mid);
-      } else {
-        const centerIdx = Math.floor((items.length - 1) / 2);
-        items[centerIdx].isGroupCenter = true;
+      } else if (items.length === 1) {
+        items[0].isGroupCenter = true;
       }
     });
   });
