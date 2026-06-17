@@ -33,9 +33,9 @@ interface TreeRow {
 }
 
 // ── keyword sets ──────────────────────────────────────────────
-const LEVEL0_PARENTS     = ['영업활동', '재무활동', '로열티수금', '비용지출'];
+const LEVEL0_PARENTS     = ['영업활동', '재무활동', '로열티수금'];
 const LEVEL0_STANDALONE  = ['기초잔액', '기말잔액', 'Net Cash', '운전자본 합계', '매출채권', '재고자산', '매입채무', 'STO 감자/배당'];
-const LEVEL1_OF_영업     = ['매출수금', '물품대 지출'];
+const LEVEL1_OF_영업     = ['매출수금', '물품대 지출', '비용지출'];
 const LEVEL1_OF_재무     = ['본사차입', 'STE감자/배당', 'STE주주환원', 'STE지분매입', '본사차입상환', '재무활동_운영자금', '투자소계'];
 const LEVEL1_OF_로열티수금 = ['Movin', 'SUGI', 'Benjamin', 'Silver', 'UBC', 'BBUK', 'BDS'];
 const LEVEL1_OF_비용지출 = ['인건비', '지급수수료', '법률비용', '광고선전비', '기타비용'];
@@ -78,6 +78,10 @@ function buildTree(rows: string[][]): TreeRow[] {
     } else if (isL2_매출 && l1Parent?.data[0]?.includes('매출수금')) {
       l1Parent.children.push({ id, data: row, children: [], level: 2 });
 
+    } else if (isL1_비용 && l1Parent?.data[0]?.includes('비용지출')) {
+      const colorIdx = l1Parent.children.length;
+      l1Parent.children.push({ id, data: row, children: [], level: 2, colorIdx });
+
     } else if (isL1_영업 && l0Parent?.data[0]?.includes('영업활동')) {
       const colorIdx = l0Parent.children.length;
       l1Parent = { id, data: row, children: [], level: 1, colorIdx };
@@ -91,10 +95,6 @@ function buildTree(rows: string[][]): TreeRow[] {
       l0Parent.children.push(node);
 
     } else if (isL1_로열티 && l0Parent?.data[0]?.includes('로열티수금')) {
-      const colorIdx = l0Parent.children.length;
-      l0Parent.children.push({ id, data: row, children: [], level: 1, colorIdx });
-
-    } else if (isL1_비용 && l0Parent?.data[0]?.includes('비용지출')) {
       const colorIdx = l0Parent.children.length;
       l0Parent.children.push({ id, data: row, children: [], level: 1, colorIdx });
 
