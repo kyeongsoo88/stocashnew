@@ -6,7 +6,8 @@ import { recalculateCashflow, updateCashloanFromCashflow, recalculateWorkingCapi
 import { DataTable } from "@/components/DataTable";
 import { DashboardAnalysis } from "@/components/DashboardAnalysis";
 import { CashflowChart } from "@/components/CashflowChart";
-import { STO_FLOW_CONFIG, STE_FLOW_CONFIG, buildModel, mergeModels } from "@/utils/chartData";
+import { ScenarioChart } from "@/components/ScenarioChart";
+import { STO_FLOW_CONFIG, STE_FLOW_CONFIG, STE_GROUP_CONFIG, buildModel, mergeModels } from "@/utils/chartData";
 import {
   Loader2,
   Printer,
@@ -36,7 +37,7 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [showMonthly, setShowMonthly] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
-  const [chartScope, setChartScope] = useState<'compare' | 'group'>('compare');
+  const [chartScope, setChartScope] = useState<'compare' | 'group' | 'scenario'>('compare');
   const [stoThreshold, setStoThreshold] = useState<number>(STO_FLOW_CONFIG.safeCashLevel);
   const [steThreshold, setSteThreshold] = useState<number>(STE_FLOW_CONFIG.safeCashLevel);
   
@@ -197,10 +198,29 @@ export default function Home() {
     () => (steCashflowData ? buildModel(steCashflowData, STE_FLOW_CONFIG) : null),
     [steCashflowData]
   );
-  const groupModel = useMemo(
-    () => (stoModel && steModel ? mergeModels(stoModel, steModel) : null),
-    [stoModel, steModel]
+  // 그룹 통합용 STE 모델: 환원 후 기말잔액 + 주주환원 유출 반영 (이중계상 방지)
+  const steGroupModel = useMemo(
+    () => (steCashflowData ? buildModel(steCashflowData, STE_GROUP_CONFIG) : null),
+    [steCashflowData]
   );
+  const groupModel = useMemo(
+    () => (stoModel && steGroupModel ? mergeModels(stoModel, steGroupModel) : null),
+    [stoModel, steGroupModel]
+  );
+
+  // 시나리오 민감도: 기준 성장률 세트 + 현재값 포함 (오름차순)
+  const scenarioRates = useMemo(
+    () => Array.from(new Set([80, 100, 130, 160, growthRate])).sort((a, b) => a - b),
+    [growthRate]
+  );
+  // 성장률 r일 때의 모델 (base 원본 → 재계산 → 모델)
+  const stoModelFor = (r: number) =>
+    buildModel(recalculateCashflow(baseCashflowData!, r), STO_FLOW_CONFIG);
+  const groupModelFor = (r: number) =>
+    mergeModels(
+      buildModel(recalculateCashflow(baseCashflowData!, r), STO_FLOW_CONFIG),
+      buildModel(recalculateCashflow(baseSteCashflowData!, r), STE_GROUP_CONFIG)
+    );
 
 
 
@@ -330,9 +350,14 @@ export default function Home() {
                       STO · STE 비교
                     </button>
                     <button onClick={() => setChartScope('group')}
-                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${chartScope === 'group' ? 'text-white' : 'bg-white'}`}
-                      style={chartScope === 'group' ? { backgroundColor: "#3b5998" } : { color: "#52514e" }}>
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors border-l ${chartScope === 'group' ? 'text-white' : 'bg-white'}`}
+                      style={chartScope === 'group' ? { backgroundColor: "#3b5998", borderColor: "rgba(255,255,255,0.2)" } : { color: "#52514e", borderColor: "rgba(11,11,11,0.15)" }}>
                       그룹 통합
+                    </button>
+                    <button onClick={() => setChartScope('scenario')}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors border-l ${chartScope === 'scenario' ? 'text-white' : 'bg-white'}`}
+                      style={chartScope === 'scenario' ? { backgroundColor: "#3b5998", borderColor: "rgba(255,255,255,0.2)" } : { color: "#52514e", borderColor: "rgba(11,11,11,0.15)" }}>
+                      시나리오 민감도
                     </button>
                   </div>
                   <button onClick={() => window.print()}
@@ -343,7 +368,28 @@ export default function Home() {
                 </div>
               </div>
 
-              {chartScope === 'group' ? (
+              {chartScope === 'scenario' ? (
+                (baseCashflowData && baseSteCashflowData) && (
+                  <div className="space-y-8">
+                    <section>
+                      <div className="flex items-center gap-3 mb-2 pb-2.5 border-b" style={{ borderColor: "rgba(11,11,11,0.10)" }}>
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold text-white tracking-wide" style={{ backgroundColor: "#3b5998" }}>STO</span>
+                        <h2 className="text-lg font-bold" style={{ color: "#0b0b0b" }}>성장률 시나리오 민감도</h2>
+                        <span className="ml-auto text-xs font-medium px-2.5 py-1 rounded-full" style={{ color: "#52514e", backgroundColor: "#f0efec" }}>매출 성장률별 자금 영향</span>
+                      </div>
+                      <ScenarioChart rates={scenarioRates} currentRate={growthRate} threshold={stoThreshold} modelFor={stoModelFor} />
+                    </section>
+                    <section>
+                      <div className="flex items-center gap-3 mb-2 pb-2.5 border-b" style={{ borderColor: "rgba(11,11,11,0.10)" }}>
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold text-white tracking-wide" style={{ backgroundColor: "#0b0b0b" }}>그룹</span>
+                        <h2 className="text-lg font-bold" style={{ color: "#0b0b0b" }}>그룹(STO+STE) 시나리오</h2>
+                        <span className="ml-auto text-xs font-medium px-2.5 py-1 rounded-full" style={{ color: "#52514e", backgroundColor: "#f0efec" }}>STE는 성장률 무관 · 내부거래 상계</span>
+                      </div>
+                      <ScenarioChart rates={scenarioRates} currentRate={growthRate} threshold={stoThreshold + steThreshold} modelFor={groupModelFor} />
+                    </section>
+                  </div>
+                )
+              ) : chartScope === 'group' ? (
                 groupModel && (
                   <section>
                     <div className="flex items-center gap-3 mb-4 pb-2.5 border-b" style={{ borderColor: "rgba(11,11,11,0.10)" }}>

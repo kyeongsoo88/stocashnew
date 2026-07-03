@@ -72,6 +72,14 @@ export const STE_FLOW_CONFIG: FlowConfig = {
   safeCashLevel: 1000,
 };
 
+// STE 그룹 통합용: 기말잔액을 '환원 후 기말잔액'으로, 주주환원(-4,000)을 재무 유출로 반영
+// (STO의 STE주주환원 수취와 상계되어 그룹 현금 이중계상 방지)
+export const STE_GROUP_CONFIG: FlowConfig = {
+  ...STE_FLOW_CONFIG,
+  closingRow: '환원 후 기말잔액',
+  financingRows: ['STO 감자/배당', '26년 기말 주주환원'],
+};
+
 const toNumber = (s: string | undefined): number =>
   Number(String(s ?? '0').replace(/[",\s]/g, '')) || 0;
 

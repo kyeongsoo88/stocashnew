@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import {
   ComposedChart,
   BarChart,
@@ -168,6 +168,15 @@ const CompositionList = ({ items, color }: { items: { name: string; value: numbe
 
 export const CashflowChart = ({ model, threshold, compact = false }: Props) => {
   const { flow, summary, lowPoint, waterfall, plan, composition, firstForecastMonth } = model;
+  const uid = useId().replace(/[:]/g, '');
+  const opHatch = `ophatch-${uid}`;
+  const fiHatch = `fihatch-${uid}`;
+
+  // 실적/전망 경계 (마지막 실적 월)
+  const lastActualMonth = useMemo(() => {
+    const actuals = flow.filter((m) => !m.isForecast);
+    return actuals.length ? actuals[actuals.length - 1].month : null;
+  }, [flow]);
 
   // 월별 차트 파생: 실적/전망 잔액선 분리
   const chartFlow = useMemo(
@@ -225,31 +234,69 @@ export const CashflowChart = ({ model, threshold, compact = false }: Props) => {
       </div>
 
       {/* 월별 복합 차트 (실적/전망 구분 + 안전선) */}
-      <ChartCard title="월별 자금흐름" note="■실적 ▨전망 · 기말잔액(선) · 안전선 --- · 단위 K$">
+      <ChartCard title="월별 자금흐름" note="기말잔액(선) · 안전선 --- · 단위 K$">
+        {/* 실적/전망 미니 범례 */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-2 pb-1.5 text-[11px]" style={{ color: C.textSec }}>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3.5 h-3.5 rounded-[3px]" style={{ backgroundColor: C.operating }} />영업활동
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3.5 h-3.5 rounded-[3px]" style={{ backgroundColor: C.financing }} />재무활동
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-4 border-t-2" style={{ borderColor: C.balance }} />기말잔액
+          </span>
+          <span className="mx-1 h-3 w-px" style={{ backgroundColor: C.grid }} />
+          <span className="flex items-center gap-1.5 font-semibold" style={{ color: C.up }}>
+            <span className="inline-block w-3.5 h-3.5 rounded-[3px]" style={{ backgroundColor: C.up }} />실적
+          </span>
+          <span className="flex items-center gap-1.5 font-semibold" style={{ color: C.warn }}>
+            <span className="inline-block w-3.5 h-3.5 rounded-[3px]" style={{
+              backgroundImage: `repeating-linear-gradient(45deg, ${C.warn} 0 2.5px, transparent 2.5px 6px)`,
+              backgroundColor: 'rgba(217,119,6,0.16)', border: `1px solid ${C.warn}`,
+            }} />전망(예상)
+          </span>
+        </div>
         <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={chartFlow} margin={{ top: 16, right: 16, left: 6, bottom: 0 }} barGap={2}>
+          <ComposedChart data={chartFlow} margin={{ top: 22, right: 16, left: 6, bottom: 0 }} barGap={2}>
+            <defs>
+              <pattern id={opHatch} width={7} height={7} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect width={7} height={7} fill={C.operating} fillOpacity={0.22} />
+                <line x1={0} y1={0} x2={0} y2={7} stroke={C.operating} strokeWidth={3.5} />
+              </pattern>
+              <pattern id={fiHatch} width={7} height={7} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect width={7} height={7} fill={C.financing} fillOpacity={0.22} />
+                <line x1={0} y1={0} x2={0} y2={7} stroke={C.financing} strokeWidth={3.5} />
+              </pattern>
+            </defs>
             <CartesianGrid stroke={C.grid} vertical={false} />
             {firstForecastMonth && (
-              <ReferenceArea x1={firstForecastMonth} x2={chartFlow[chartFlow.length - 1].month} fill={C.foreZone} fillOpacity={1}
-                label={{ value: '전망', position: 'insideTopRight', fill: C.muted, fontSize: 11, fontWeight: 700 }} />
+              <ReferenceArea x1={firstForecastMonth} x2={chartFlow[chartFlow.length - 1].month} fill={C.warn} fillOpacity={0.05}
+                label={{ value: '전망(예상)', position: 'insideTopRight', fill: C.warn, fontSize: 11.5, fontWeight: 800 }} />
+            )}
+            {lastActualMonth && firstForecastMonth && lastActualMonth !== firstForecastMonth && (
+              <ReferenceArea x1={chartFlow[0].month} x2={lastActualMonth} fill="transparent"
+                label={{ value: '실적', position: 'insideTopLeft', fill: C.up, fontSize: 11.5, fontWeight: 800 }} />
+            )}
+            {firstForecastMonth && (
+              <ReferenceLine x={firstForecastMonth} stroke={C.warn} strokeWidth={1.5} strokeDasharray="4 3" ifOverflow="visible" />
             )}
             <XAxis dataKey="month" tick={{ fontSize: 12, fill: C.textSec }} axisLine={{ stroke: C.baseline }} tickLine={false} />
             <YAxis tick={{ fontSize: 11, fill: C.axis }} tickFormatter={fmt} axisLine={false} tickLine={false} width={46} />
             <Tooltip content={<MonthlyTooltip />} cursor={{ fill: 'rgba(137,135,129,0.08)' }} />
-            <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10, color: C.textSec }} iconType="circle" iconSize={9} />
             <ReferenceLine y={0} stroke={C.baseline} />
             <ReferenceLine y={threshold} stroke={C.warn} strokeDasharray="6 4"
               label={{ value: `안전선 ${fmt(threshold)}`, position: 'insideBottomLeft', fill: C.warn, fontSize: 10.5, fontWeight: 700 }} />
             <Bar dataKey="operating" name="영업활동" radius={[3, 3, 0, 0]} maxBarSize={22}>
-              {chartFlow.map((m, i) => <Cell key={i} fill={C.operating} fillOpacity={m.isForecast ? 0.4 : 1} />)}
+              {chartFlow.map((m, i) => <Cell key={i} fill={m.isForecast ? `url(#${opHatch})` : C.operating} />)}
             </Bar>
             <Bar dataKey="financing" name="재무활동" radius={[3, 3, 0, 0]} maxBarSize={22}>
-              {chartFlow.map((m, i) => <Cell key={i} fill={C.financing} fillOpacity={m.isForecast ? 0.4 : 1} />)}
+              {chartFlow.map((m, i) => <Cell key={i} fill={m.isForecast ? `url(#${fiHatch})` : C.financing} />)}
             </Bar>
-            <Line type="monotone" dataKey="closingActual" name="기말잔액(실적)" stroke={C.balance} strokeWidth={2}
-              strokeLinecap="round" dot={{ r: 3, fill: C.balance, stroke: C.surface, strokeWidth: 2 }} activeDot={{ r: 5, stroke: C.surface, strokeWidth: 2 }} connectNulls />
-            <Line type="monotone" dataKey="closingForecast" name="기말잔액(전망)" stroke={C.balance} strokeWidth={2}
-              strokeDasharray="5 4" strokeLinecap="round" dot={{ r: 3, fill: C.surface, stroke: C.balance, strokeWidth: 2 }} activeDot={{ r: 5, stroke: C.surface, strokeWidth: 2 }} connectNulls legendType="none" />
+            <Line type="monotone" dataKey="closingActual" name="기말잔액(실적)" stroke={C.balance} strokeWidth={2.5}
+              strokeLinecap="round" dot={{ r: 3.5, fill: C.balance, stroke: C.surface, strokeWidth: 2 }} activeDot={{ r: 5, stroke: C.surface, strokeWidth: 2 }} connectNulls />
+            <Line type="monotone" dataKey="closingForecast" name="기말잔액(전망)" stroke={C.balance} strokeWidth={2.5}
+              strokeDasharray="2 4" strokeLinecap="round" dot={{ r: 3.5, fill: C.surface, stroke: C.balance, strokeWidth: 2 }} activeDot={{ r: 5, stroke: C.surface, strokeWidth: 2 }} connectNulls legendType="none" />
             {belowThreshold.map((m, i) => (
               <ReferenceDot key={i} x={m.month} y={m.closing} r={4} fill={C.down} stroke={C.surface} strokeWidth={2} />
             ))}

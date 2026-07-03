@@ -63,9 +63,10 @@ export const recalculateCashflow = (baseData: ParsedData, targetRate: number): P
   const ratio = targetRate / 100;
 
   for (let col = startCol; col <= endCol; col++) {
-    // 1월(index 2)과 2월(index 3)은 Actual 데이터이므로 변동 없음
-    // 3월(index 4)부터 Forecast 적용
-    const isActual = col === 2 || col === 3;
+    // 실적/전망 구분은 CSV 헤더의 "(예상)" 표기 기준
+    // 실적(예: 1~5월)은 확정값이라 성장률과 무관, 전망(예: 6~12월)만 성장률 반영
+    const colHeader = baseData.headers[col] || '';
+    const isActual = !colHeader.includes('예상');
     const currentRatio = isActual ? 1 : ratio;
 
     // 1. 기초잔액 업데이트 (2월부터는 전월 기말잔액 사용)
