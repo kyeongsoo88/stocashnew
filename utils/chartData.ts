@@ -7,6 +7,9 @@ export interface MonthlyFlow {
   financing: number;  // 재무활동 증감
   closing: number;    // 기말잔액
   isForecast: boolean; // 전망(예상) 여부
+  inflows: CompItem[];        // 그 달의 수금 세부 (드릴다운)
+  outflows: CompItem[];       // 그 달의 비용·지출 세부 (드릴다운)
+  financingItems: CompItem[]; // 그 달의 재무 세부 (드릴다운)
 }
 
 export interface PlanRow {
@@ -145,6 +148,19 @@ export const extractMonthlyFlow = (data: ParsedData, config: FlowConfig): Monthl
   const fiRows = config.financingRows.map(findRow).filter(Boolean) as string[][];
   const monthCols = getMonthColumns(data.headers);
 
+  // 월별 세부 구성(드릴다운)용
+  const itemsAt = (rowNames: string[], index: number): CompItem[] =>
+    rowNames
+      .map((n) => ({ name: n, value: toNumber(findRow(n)?.[index]) }))
+      .filter((x) => x.value !== 0);
+  const finItemsAt = (index: number): CompItem[] =>
+    config.financingDetailRows
+      .map(({ rows, label }) => ({
+        name: label,
+        value: rows.reduce((sm, rn) => sm + toNumber(findRow(rn)?.[index]), 0),
+      }))
+      .filter((x) => x.value !== 0);
+
   return monthCols.map(({ index, label, isForecast }) => ({
     month: label,
     opening: openingRow ? toNumber(openingRow[index]) : 0,
@@ -152,6 +168,9 @@ export const extractMonthlyFlow = (data: ParsedData, config: FlowConfig): Monthl
     operating: opRows.reduce((s, r) => s + toNumber(r[index]), 0),
     financing: fiRows.reduce((s, r) => s + toNumber(r[index]), 0),
     isForecast,
+    inflows: itemsAt(config.inflowRows, index),
+    outflows: itemsAt(config.outflowRows, index),
+    financingItems: finItemsAt(index),
   }));
 };
 
@@ -268,6 +287,9 @@ export const mergeModels = (a: FlowModel, b: FlowModel): FlowModel => {
       financing: (x?.financing ?? 0) + (y?.financing ?? 0),
       closing: (x?.closing ?? 0) + (y?.closing ?? 0),
       isForecast: (x?.isForecast ?? y?.isForecast) ?? false,
+      inflows: [...(x?.inflows ?? []), ...(y?.inflows ?? [])],
+      outflows: [...(x?.outflows ?? []), ...(y?.outflows ?? [])],
+      financingItems: [...(x?.financingItems ?? []), ...(y?.financingItems ?? [])],
     });
   }
   const plan: PlanRow[] = a.plan.map((p, i) => ({

@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo } from 'react';
+import { useId, useMemo, useState } from 'react';
 import {
   ComposedChart,
   BarChart,
@@ -176,11 +176,35 @@ const CompositionList = ({ items, color }: { items: { name: string; value: numbe
   );
 };
 
+// ── 드릴다운 계정 리스트 ──
+const DetailList = ({ title, color, items }: { title: string; color: string; items: { name: string; value: number }[] }) => (
+  <div>
+    <div className="flex items-center gap-1.5 mb-1">
+      <span className="inline-block w-2 h-2 rounded-[2px]" style={{ backgroundColor: color }} />
+      <span className="text-[11px] font-semibold" style={{ color: C.textSec }}>{title}</span>
+    </div>
+    {items.length === 0 ? (
+      <div className="text-[11px] pl-3.5" style={{ color: C.muted }}>—</div>
+    ) : (
+      <div className="space-y-0.5">
+        {items.map((it) => (
+          <div key={it.name} className="flex items-center justify-between gap-3 pl-3.5">
+            <span className="text-[11.5px] truncate" style={{ color: C.textSec }} title={it.name}>{it.name}</span>
+            <span className="text-[11.5px] tabular-nums shrink-0" style={{ color: it.value < 0 ? C.down : C.textPri }}>{fmtSigned(it.value)}</span>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
 export const CashflowChart = ({ model, threshold, compact = false }: Props) => {
   const { flow, summary, lowPoint, waterfall, plan, composition, shareholderReturn: sr, firstForecastMonth } = model;
   const uid = useId().replace(/[:]/g, '');
   const opHatch = `ophatch-${uid}`;
   const fiHatch = `fihatch-${uid}`;
+  const [selMonth, setSelMonth] = useState<string | null>(null);
+  const selDetail = useMemo(() => flow.find((m) => m.month === selMonth) ?? null, [flow, selMonth]);
 
   // 실적/전망 경계 (마지막 실적 월)
   const lastActualMonth = useMemo(() => {
@@ -271,7 +295,8 @@ export const CashflowChart = ({ model, threshold, compact = false }: Props) => {
           </span>
         </div>
         <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={chartFlow} margin={{ top: 22, right: 16, left: 6, bottom: 0 }} barGap={2}>
+          <ComposedChart data={chartFlow} margin={{ top: 22, right: 16, left: 6, bottom: 0 }} barGap={2}
+            onClick={(e: any) => { const l = e?.activeLabel ?? e?.activePayload?.[0]?.payload?.month; if (l) setSelMonth(l); }} style={{ cursor: 'pointer' }}>
             <defs>
               <pattern id={opHatch} width={7} height={7} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
                 <rect width={7} height={7} fill={C.operating} fillOpacity={0.22} />
@@ -300,10 +325,12 @@ export const CashflowChart = ({ model, threshold, compact = false }: Props) => {
             <ReferenceLine y={0} stroke={C.baseline} />
             <ReferenceLine y={threshold} stroke={C.warn} strokeDasharray="6 4"
               label={{ value: `안전선 ${fmt(threshold)}`, position: 'insideBottomLeft', fill: C.warn, fontSize: 10.5, fontWeight: 700 }} />
-            <Bar dataKey="operating" name="영업활동" radius={[3, 3, 0, 0]} maxBarSize={22}>
+            <Bar dataKey="operating" name="영업활동" radius={[3, 3, 0, 0]} maxBarSize={22}
+              onClick={(d: any) => setSelMonth(d?.month ?? d?.payload?.month ?? null)} cursor="pointer">
               {chartFlow.map((m, i) => <Cell key={i} fill={m.isForecast ? `url(#${opHatch})` : C.operating} />)}
             </Bar>
-            <Bar dataKey="financing" name="재무활동" radius={[3, 3, 0, 0]} maxBarSize={22}>
+            <Bar dataKey="financing" name="재무활동" radius={[3, 3, 0, 0]} maxBarSize={22}
+              onClick={(d: any) => setSelMonth(d?.month ?? d?.payload?.month ?? null)} cursor="pointer">
               {chartFlow.map((m, i) => <Cell key={i} fill={m.isForecast ? `url(#${fiHatch})` : C.financing} />)}
             </Bar>
             <Line type="monotone" dataKey="closingActual" name="기말잔액(실적)" stroke={C.balance} strokeWidth={2.5}
@@ -319,6 +346,42 @@ export const CashflowChart = ({ model, threshold, compact = false }: Props) => {
             )}
           </ComposedChart>
         </ResponsiveContainer>
+        {/* 월 클릭 드릴다운 */}
+        {selDetail ? (
+          <div className="mx-2 mb-1 mt-2 rounded-lg border p-3" style={{ borderColor: 'rgba(11,11,11,0.10)', background: 'rgba(137,135,129,0.045)' }}>
+            <div className="flex items-center gap-2 mb-2.5">
+              <span className="text-[13px] font-bold" style={{ color: C.textPri }}>26년 {selDetail.month} 상세</span>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ color: selDetail.isForecast ? C.warn : C.up, backgroundColor: selDetail.isForecast ? 'rgba(217,119,6,0.10)' : 'rgba(12,163,12,0.10)' }}>
+                {selDetail.isForecast ? '전망' : '실적'}
+              </span>
+              <button onClick={() => setSelMonth(null)} className="ml-auto text-[11px] px-2 py-0.5 rounded hover:bg-black/5" style={{ color: C.muted }}>닫기 ✕</button>
+            </div>
+            {/* 흐름 요약 */}
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              {[
+                { l: '기초잔액', v: selDetail.opening, c: C.muted },
+                { l: '영업활동', v: selDetail.operating, c: selDetail.operating >= 0 ? C.up : C.down, s: true },
+                { l: '재무활동', v: selDetail.financing, c: selDetail.financing >= 0 ? C.up : C.down, s: true },
+                { l: '기말잔액', v: selDetail.closing, c: C.wfTotal },
+              ].map((x) => (
+                <div key={x.l} className="rounded-md bg-white border px-2.5 py-1.5" style={{ borderColor: 'rgba(11,11,11,0.08)' }}>
+                  <div className="text-[10px]" style={{ color: C.muted }}>{x.l}</div>
+                  <div className="text-[14px] font-bold tabular-nums" style={{ color: x.c }}>{x.s ? fmtSigned(x.v) : fmt(x.v)}</div>
+                </div>
+              ))}
+            </div>
+            {/* 계정별 세부 */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-5 gap-y-2">
+              <DetailList title="수금 (유입)" color={C.operating} items={selDetail.inflows} />
+              <DetailList title="비용·지출 (유출)" color={C.warn} items={selDetail.outflows} />
+              <DetailList title="재무활동" color={C.financing} items={selDetail.financingItems} />
+            </div>
+          </div>
+        ) : (
+          <div className="mx-2 mb-1 mt-1.5 text-[11px] text-center" style={{ color: C.muted }}>
+            막대를 클릭하면 해당 월의 계정별 상세 구성이 표시됩니다
+          </div>
+        )}
       </ChartCard>
 
       {/* 워터폴 + 핵심관찰 */}
