@@ -5,8 +5,11 @@ import { fetchAndParseCsv, ParsedData } from "@/utils/csv";
 import { recalculateCashflow, updateCashloanFromCashflow, recalculateWorkingCapital } from "@/utils/calculation";
 import { DataTable } from "@/components/DataTable";
 import { DashboardAnalysis } from "@/components/DashboardAnalysis";
-import { 
-  Loader2, 
+import { CashflowChart } from "@/components/CashflowChart";
+import { STO_FLOW_CONFIG, STE_FLOW_CONFIG, buildModel, mergeModels } from "@/utils/chartData";
+import {
+  Loader2,
+  Printer,
 } from "lucide-react";
 
 export default function Home() {
@@ -32,6 +35,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [showMonthly, setShowMonthly] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
+  const [chartScope, setChartScope] = useState<'compare' | 'group'>('compare');
+  const [stoThreshold, setStoThreshold] = useState<number>(STO_FLOW_CONFIG.safeCashLevel);
+  const [steThreshold, setSteThreshold] = useState<number>(STE_FLOW_CONFIG.safeCashLevel);
   
   // Growth Rate State (Number, 100-200)
   const [growthRate, setGrowthRate] = useState<number>(100);
@@ -181,6 +188,20 @@ export default function Home() {
     setInputValue(String(rate));
   };
 
+  // 그래프 모델 (성장률 반영된 데이터 기준)
+  const stoModel = useMemo(
+    () => (cashflowData ? buildModel(cashflowData, STO_FLOW_CONFIG) : null),
+    [cashflowData]
+  );
+  const steModel = useMemo(
+    () => (steCashflowData ? buildModel(steCashflowData, STE_FLOW_CONFIG) : null),
+    [steCashflowData]
+  );
+  const groupModel = useMemo(
+    () => (stoModel && steModel ? mergeModels(stoModel, steModel) : null),
+    [stoModel, steModel]
+  );
+
 
 
   return (
@@ -191,12 +212,34 @@ export default function Home() {
           <div className="flex items-center gap-4 flex-shrink-0">
             <h1 className="text-xl font-bold text-white mr-4 whitespace-nowrap">연간 자금계획</h1>
 
-            <button
-              onClick={() => setShowMonthly(!showMonthly)}
-              className="px-4 py-2 bg-blue-800 text-white font-medium rounded hover:bg-blue-700 transition-colors flex items-center gap-1 border border-blue-600 whitespace-nowrap"
-            >
-              월별 데이터 {showMonthly ? "접기 ▶" : "펼치기 ▶"}
-            </button>
+            {/* 표 / 그래프 전환 */}
+            <div className="flex items-center rounded-lg border border-blue-600 overflow-hidden">
+              <button
+                onClick={() => setViewMode('table')}
+                className={`px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+                  viewMode === 'table' ? 'bg-white text-blue-900' : 'bg-blue-800 text-white hover:bg-blue-700'
+                }`}
+              >
+                표 보기
+              </button>
+              <button
+                onClick={() => setViewMode('chart')}
+                className={`px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+                  viewMode === 'chart' ? 'bg-white text-blue-900' : 'bg-blue-800 text-white hover:bg-blue-700'
+                }`}
+              >
+                그래프 보기
+              </button>
+            </div>
+
+            {viewMode === 'table' && (
+              <button
+                onClick={() => setShowMonthly(!showMonthly)}
+                className="px-4 py-2 bg-blue-800 text-white font-medium rounded hover:bg-blue-700 transition-colors flex items-center gap-1 border border-blue-600 whitespace-nowrap"
+              >
+                월별 데이터 {showMonthly ? "접기 ▶" : "펼치기 ▶"}
+              </button>
+            )}
 
             {/* Growth Rate Slider - Embedded in Header */}
             <div className="flex items-center gap-3 ml-4 bg-blue-800/50 px-4 py-1.5 rounded-lg border border-blue-700">
@@ -266,6 +309,83 @@ export default function Home() {
             <div className="flex flex-col items-center justify-center h-full text-red-500 gap-2">
               <p className="text-lg font-semibold">오류 발생</p>
               <p>{error}</p>
+            </div>
+          ) : viewMode === 'chart' ? (
+            <div id="cashflow-report" className="h-full overflow-y-auto pr-4 pb-8 space-y-6" style={{ backgroundColor: "#f9f9f7" }}>
+              {/* 리포트 표제 */}
+              <div className="pt-1 flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: "#898781" }}>Cash Flow Report · 26F</div>
+                  <h1 className="text-2xl font-bold mt-1" style={{ color: "#0b0b0b" }}>연간 자금흐름 분석</h1>
+                  <p className="text-sm mt-1" style={{ color: "#52514e" }}>
+                    월별 영업·재무활동 증감과 잔액 추이 · 단위 K$ · 매출 {growthRate}% 가정
+                  </p>
+                </div>
+                {/* 범위 토글 + 내보내기 */}
+                <div className="flex items-center gap-2 shrink-0 print:hidden">
+                  <div className="flex items-center rounded-lg border overflow-hidden" style={{ borderColor: "rgba(11,11,11,0.15)" }}>
+                    <button onClick={() => setChartScope('compare')}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${chartScope === 'compare' ? 'text-white' : 'bg-white'}`}
+                      style={chartScope === 'compare' ? { backgroundColor: "#3b5998" } : { color: "#52514e" }}>
+                      STO · STE 비교
+                    </button>
+                    <button onClick={() => setChartScope('group')}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${chartScope === 'group' ? 'text-white' : 'bg-white'}`}
+                      style={chartScope === 'group' ? { backgroundColor: "#3b5998" } : { color: "#52514e" }}>
+                      그룹 통합
+                    </button>
+                  </div>
+                  <button onClick={() => window.print()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-white hover:bg-gray-50 transition-colors"
+                    style={{ borderColor: "rgba(11,11,11,0.15)", color: "#52514e" }}>
+                    <Printer size={14} /> PDF · 인쇄
+                  </button>
+                </div>
+              </div>
+
+              {chartScope === 'group' ? (
+                groupModel && (
+                  <section>
+                    <div className="flex items-center gap-3 mb-4 pb-2.5 border-b" style={{ borderColor: "rgba(11,11,11,0.10)" }}>
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold text-white tracking-wide" style={{ backgroundColor: "#0b0b0b" }}>그룹</span>
+                      <h2 className="text-lg font-bold" style={{ color: "#0b0b0b" }}>STO + STE 통합</h2>
+                      <span className="ml-auto text-xs font-medium px-2.5 py-1 rounded-full" style={{ color: "#52514e", backgroundColor: "#f0efec" }}>내부거래 상계 반영 · 매출 {growthRate}% 가정</span>
+                    </div>
+                    <CashflowChart model={groupModel} threshold={stoThreshold + steThreshold} />
+                  </section>
+                )
+              ) : (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                  {stoModel && (
+                    <section>
+                      <div className="flex items-center gap-3 mb-4 pb-2.5 border-b" style={{ borderColor: "rgba(11,11,11,0.10)" }}>
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold text-white tracking-wide" style={{ backgroundColor: "#3b5998" }}>STO</span>
+                        <h2 className="text-lg font-bold" style={{ color: "#0b0b0b" }}>STO 현금흐름</h2>
+                        <label className="ml-auto flex items-center gap-1.5 text-xs print:hidden" style={{ color: "#898781" }}>
+                          안전선
+                          <input type="number" value={stoThreshold} onChange={(e) => setStoThreshold(Number(e.target.value) || 0)}
+                            className="w-20 px-2 py-1 text-right rounded border tabular-nums" style={{ borderColor: "rgba(11,11,11,0.15)", color: "#0b0b0b" }} />
+                        </label>
+                      </div>
+                      <CashflowChart model={stoModel} threshold={stoThreshold} compact />
+                    </section>
+                  )}
+                  {steModel && (
+                    <section>
+                      <div className="flex items-center gap-3 mb-4 pb-2.5 border-b" style={{ borderColor: "rgba(11,11,11,0.10)" }}>
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold text-white tracking-wide" style={{ backgroundColor: "#1baf7a" }}>STE</span>
+                        <h2 className="text-lg font-bold" style={{ color: "#0b0b0b" }}>STE 현금흐름</h2>
+                        <label className="ml-auto flex items-center gap-1.5 text-xs print:hidden" style={{ color: "#898781" }}>
+                          안전선
+                          <input type="number" value={steThreshold} onChange={(e) => setSteThreshold(Number(e.target.value) || 0)}
+                            className="w-20 px-2 py-1 text-right rounded border tabular-nums" style={{ borderColor: "rgba(11,11,11,0.15)", color: "#0b0b0b" }} />
+                        </label>
+                      </div>
+                      <CashflowChart model={steModel} threshold={steThreshold} compact />
+                    </section>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div

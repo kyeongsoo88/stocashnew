@@ -265,11 +265,11 @@ export const DataTable: React.FC<DataTableProps> = ({
   const newLayoutHeaders = useNewLayout && !showMonthly ? [
     { label: '계정과목', rowSpan: 2, colSpan: 1 },
     { label: '전년', rowSpan: 2, colSpan: 1 },
-    { label: 'RF_04', rowSpan: 2, colSpan: 1 },
-    { label: 'RF_05', rowSpan: 1, colSpan: 4, children: [
-      { label: 'RF_05', rowSpan: 1, colSpan: 1 },
-      { label: 'RF_05 - 전년', rowSpan: 1, colSpan: 1 },
-      { label: 'RF_04대비 증감', rowSpan: 1, colSpan: 1 },
+    { label: 'RF_05', rowSpan: 2, colSpan: 1 },
+    { label: 'RF_06', rowSpan: 1, colSpan: 4, children: [
+      { label: 'RF_06', rowSpan: 1, colSpan: 1 },
+      { label: 'RF_06 - 전년', rowSpan: 1, colSpan: 1 },
+      { label: 'RF_05대비 증감', rowSpan: 1, colSpan: 1 },
       { label: '상세', rowSpan: 1, colSpan: 1 },
     ]},
   ] : null;
@@ -316,7 +316,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[120px]'
                   )}
                 >
-                  RF_04
+                  RF_05
                 </th>
                 <th
                   colSpan={4}
@@ -326,7 +326,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     headerStyle === 'dark' ? 'border-blue-800' : 'border-gray-300',
                   )}
                 >
-                  RF_05
+                  RF_06
                 </th>
               </tr>
               {/* 두 번째 행: 소컬럼 */}
@@ -339,7 +339,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[120px]'
                   )}
                 >
-                  RF_05
+                  RF_06
                 </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
@@ -349,7 +349,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[120px]'
                   )}
                 >
-                  RF_05 - 전년
+                  RF_06 - 전년
                 </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
@@ -359,7 +359,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     'min-w-[120px]'
                   )}
                 >
-                  RF_04대비 증감
+                  RF_05대비 증감
                 </th>
                 <th
                   style={{ backgroundColor: headerBg, color: headerText }}
