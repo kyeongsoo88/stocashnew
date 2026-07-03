@@ -39,6 +39,7 @@ export interface FlowConfig {
   inflowRows: string[];      // 수금 세부 구성 (유입)
   outflowRows: string[];     // 비용·지출 세부 구성 (유출)
   financingDetailRows: { rows: string[]; label: string; partLabels?: string[] }[]; // 재무활동 세부(워터폴 분해용; rows 합산, partLabels 지정 시 툴팁에 구성 표기)
+  shareholderReturnRow?: string; // 주주환원 등 재무와 별도로 표기할 KPI 행 (지정 시 별도 카드 + 기말은 환원 후 값 기준)
   safeCashLevel: number;     // 최소 안전현금 기본값
 }
 
@@ -50,6 +51,7 @@ export interface FlowModel {
   plan: PlanRow[];
   composition: Composition;
   financingDetail: FinDetail[];
+  shareholderReturn?: { value: number; prev: number }; // 별도 표기 항목 (주주환원 등)
   firstForecastMonth: string | null;
 }
 
@@ -95,14 +97,16 @@ export const STO_GROUP_CONFIG: FlowConfig = {
 // STE 현금흐름표 (소계 행이 없어 세부 행을 합산)
 export const STE_FLOW_CONFIG: FlowConfig = {
   openingRow: '기초잔액',
-  closingRow: '기말잔액',
+  closingRow: '환원 후 기말잔액', // 주주환원(-4,000)을 반영한 실제 연말 잔액(319)
   operatingRows: ['로열티수금', '비용지출'],
-  financingRows: ['STO 감자/배당'],
+  financingRows: ['STO 감자/배당'], // 재무활동 순계는 STO감자만(-18,292), 주주환원은 별도 카드로 분리
   inflowRows: ['BBUK', 'Movin', 'Benjamin', 'SUGI', 'SUGI FR', 'Silver', 'BDS'],
   outflowRows: ['법률비용', '광고선전비', '기타비용'],
   financingDetailRows: [
     { rows: ['STO 감자/배당'], label: 'STO감자' },
+    { rows: ['26년 기말 주주환원'], label: 'STE주주환원' },
   ],
+  shareholderReturnRow: '26년 기말 주주환원',
   safeCashLevel: 1000,
 };
 
@@ -116,6 +120,7 @@ export const STE_GROUP_CONFIG: FlowConfig = {
     { rows: ['STO 감자/배당'], label: 'STO감자' },
     { rows: ['26년 기말 주주환원'], label: '주주환원' },
   ],
+  shareholderReturnRow: undefined, // 그룹에선 내부거래 상계로 처리 (별도 카드 없음)
 };
 
 const toNumber = (s: string | undefined): number =>
@@ -200,6 +205,15 @@ export const extractFinancingDetail = (data: ParsedData, config: FlowConfig): Fi
     .filter((x) => x.value !== 0);
 };
 
+export const extractShareholderReturn = (data: ParsedData, config: FlowConfig): { value: number; prev: number } | undefined => {
+  if (!config.shareholderReturnRow) return undefined;
+  const r = data.rows.find((x) => (x[0] ?? '').trim() === config.shareholderReturnRow);
+  if (!r) return undefined;
+  const monthCols = getMonthColumns(data.headers).map((c) => c.index);
+  const value = monthCols.reduce((sm, ci) => sm + toNumber(r[ci]), 0);
+  return { value, prev: toNumber(r[1]) };
+};
+
 // 그룹 병합 시 상계할 내부거래(STO↔STE) 라벨
 const INTERCOMPANY_LABELS = new Set(['STE감자', 'STO감자', 'STE환원', '주주환원']);
 
@@ -222,7 +236,7 @@ const buildWaterfall = (s: FlowModel['summary'], financingDetail: FinDetail[]): 
   return steps;
 };
 
-const finalize = (flow: MonthlyFlow[], plan: PlanRow[], composition: Composition, financingDetail: FinDetail[]): FlowModel => {
+const finalize = (flow: MonthlyFlow[], plan: PlanRow[], composition: Composition, financingDetail: FinDetail[], shareholderReturn?: { value: number; prev: number }): FlowModel => {
   const summary = flow.length === 0
     ? { opening: 0, opSum: 0, fiSum: 0, closing: 0, net: 0 }
     : (() => {
@@ -234,11 +248,11 @@ const finalize = (flow: MonthlyFlow[], plan: PlanRow[], composition: Composition
       })();
   const lowPoint = flow.length === 0 ? null : flow.reduce((m, x) => (x.closing < m.closing ? x : m), flow[0]);
   const firstForecastMonth = flow.find((m) => m.isForecast)?.month ?? null;
-  return { flow, summary, lowPoint, waterfall: buildWaterfall(summary, financingDetail), plan, composition, financingDetail, firstForecastMonth };
+  return { flow, summary, lowPoint, waterfall: buildWaterfall(summary, financingDetail), plan, composition, financingDetail, shareholderReturn, firstForecastMonth };
 };
 
 export const buildModel = (data: ParsedData, config: FlowConfig): FlowModel =>
-  finalize(extractMonthlyFlow(data, config), extractPlan(data, config), extractComposition(data, config), extractFinancingDetail(data, config));
+  finalize(extractMonthlyFlow(data, config), extractPlan(data, config), extractComposition(data, config), extractFinancingDetail(data, config), extractShareholderReturn(data, config));
 
 // STO + STE 그룹 통합 (현금잔액은 합산이 곧 그룹 보유현금, 내부거래 유출입은 합산 시 자연 상계)
 export const mergeModels = (a: FlowModel, b: FlowModel): FlowModel => {

@@ -177,7 +177,7 @@ const CompositionList = ({ items, color }: { items: { name: string; value: numbe
 };
 
 export const CashflowChart = ({ model, threshold, compact = false }: Props) => {
-  const { flow, summary, lowPoint, waterfall, plan, composition, firstForecastMonth } = model;
+  const { flow, summary, lowPoint, waterfall, plan, composition, shareholderReturn: sr, firstForecastMonth } = model;
   const uid = useId().replace(/[:]/g, '');
   const opHatch = `ophatch-${uid}`;
   const fiHatch = `fihatch-${uid}`;
@@ -235,10 +235,13 @@ export const CashflowChart = ({ model, threshold, compact = false }: Props) => {
   return (
     <div className="space-y-4" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
       {/* KPI 통계 밴드 */}
-      <div className="grid grid-cols-5 gap-3">
+      <div className={sr ? 'grid grid-cols-6 gap-3' : 'grid grid-cols-5 gap-3'}>
         <Tile label="기초잔액 (연초)" value={summary.opening} accent={C.textSec} delta={dOpen} />
         <Tile label="영업활동 순계" value={summary.opSum} accent={summary.opSum >= 0 ? C.up : C.down} signed delta={dOp} />
         <Tile label="재무활동 순계" value={summary.fiSum} accent={summary.fiSum >= 0 ? C.up : C.down} signed delta={dFi} />
+        {sr && (
+          <Tile label="STE주주환원" value={sr.value} accent={sr.value >= 0 ? C.up : C.down} signed delta={sr.value - sr.prev} />
+        )}
         <Tile label="기말잔액 (연말)" value={summary.closing} accent={C.wfTotal} hero delta={dClose} />
         <Tile label="연간 순증감" value={summary.net} accent={summary.net >= 0 ? C.up : C.down} signed delta={dNet} />
       </div>
