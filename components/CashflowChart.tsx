@@ -97,6 +97,16 @@ const WaterfallTooltip = ({ active, payload }: any) => {
         {p.isTotal ? '잔액 ' : '증감 '}
         <span className="font-semibold tabular-nums" style={{ color }}>{p.isTotal ? fmt(p.value) : fmtSigned(p.delta)}</span>
       </div>
+      {p.parts?.length > 0 && (
+        <div className="mt-1.5 pt-1.5 border-t space-y-0.5" style={{ borderColor: '#f0efec' }}>
+          {p.parts.map((pt: any, i: number) => (
+            <div key={i} className="flex items-center justify-between gap-6 text-[11px]" style={{ color: C.muted }}>
+              <span>{pt.name}</span>
+              <span className="tabular-nums">{fmtSigned(pt.value)}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -311,21 +321,22 @@ export const CashflowChart = ({ model, threshold, compact = false }: Props) => {
       {/* 워터폴 + 핵심관찰 */}
       <div className={compact ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-5 gap-4'}>
         <div className={compact ? '' : 'lg:col-span-3'}>
-          <ChartCard title="연간 자금흐름 브릿지" note="기초 → 영업 → 재무 → 기말 · 단위 K$">
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={waterfall} margin={{ top: 26, right: 12, left: 6, bottom: 0 }}>
+          <ChartCard title="연간 자금흐름 브릿지" note="기초 → 영업 → 재무(세부) → 기말 · 단위 K$">
+            <ResponsiveContainer width="100%" height={270}>
+              <BarChart data={waterfall} margin={{ top: 26, right: 12, left: 6, bottom: 4 }} barCategoryGap="18%">
                 <CartesianGrid stroke={C.grid} vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 12, fill: C.textSec }} axisLine={{ stroke: C.baseline }} tickLine={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10.5, fill: C.textSec }} axisLine={{ stroke: C.baseline }} tickLine={false} interval={0} />
                 <YAxis tick={{ fontSize: 11, fill: C.axis }} tickFormatter={fmt} axisLine={false} tickLine={false} width={46} />
                 <Tooltip content={<WaterfallTooltip />} cursor={{ fill: 'rgba(137,135,129,0.08)' }} />
+                <ReferenceLine y={0} stroke={C.baseline} />
                 <Bar dataKey="base" stackId="wf" fill="transparent" />
-                <Bar dataKey="bar" stackId="wf" radius={[3, 3, 0, 0]} maxBarSize={56}>
+                <Bar dataKey="bar" stackId="wf" radius={[3, 3, 0, 0]} maxBarSize={44}>
                   {waterfall.map((s, i) => (
                     <Cell key={i} fill={s.kind === 'up' ? C.up : s.kind === 'down' ? C.down : C.wfTotal} />
                   ))}
                   <LabelList dataKey="delta" position="top"
                     formatter={(v: unknown) => { const n = Number(v) || 0; return n > 0 ? `+${fmt(n)}` : fmt(n); }}
-                    style={{ fontSize: 11, fill: C.textSec, fontWeight: 700 }} />
+                    style={{ fontSize: 9.5, fill: C.textSec, fontWeight: 700 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

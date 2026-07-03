@@ -7,7 +7,7 @@ import { DataTable } from "@/components/DataTable";
 import { DashboardAnalysis } from "@/components/DashboardAnalysis";
 import { CashflowChart } from "@/components/CashflowChart";
 import { ScenarioChart } from "@/components/ScenarioChart";
-import { STO_FLOW_CONFIG, STE_FLOW_CONFIG, STE_GROUP_CONFIG, buildModel, mergeModels } from "@/utils/chartData";
+import { STO_FLOW_CONFIG, STE_FLOW_CONFIG, STO_GROUP_CONFIG, STE_GROUP_CONFIG, buildModel, mergeModels } from "@/utils/chartData";
 import {
   Loader2,
   Printer,
@@ -198,14 +198,18 @@ export default function Home() {
     () => (steCashflowData ? buildModel(steCashflowData, STE_FLOW_CONFIG) : null),
     [steCashflowData]
   );
-  // 그룹 통합용 STE 모델: 환원 후 기말잔액 + 주주환원 유출 반영 (이중계상 방지)
+  // 그룹 통합용 모델: STO는 재무 원자 유지(STO_GROUP), STE는 환원 후 기말 + 주주환원 반영
+  const stoGroupModel = useMemo(
+    () => (cashflowData ? buildModel(cashflowData, STO_GROUP_CONFIG) : null),
+    [cashflowData]
+  );
   const steGroupModel = useMemo(
     () => (steCashflowData ? buildModel(steCashflowData, STE_GROUP_CONFIG) : null),
     [steCashflowData]
   );
   const groupModel = useMemo(
-    () => (stoModel && steGroupModel ? mergeModels(stoModel, steGroupModel) : null),
-    [stoModel, steGroupModel]
+    () => (stoGroupModel && steGroupModel ? mergeModels(stoGroupModel, steGroupModel) : null),
+    [stoGroupModel, steGroupModel]
   );
 
   // 시나리오 민감도: 기준 성장률 세트 + 현재값 포함 (오름차순)
@@ -218,7 +222,7 @@ export default function Home() {
     buildModel(recalculateCashflow(baseCashflowData!, r), STO_FLOW_CONFIG);
   const groupModelFor = (r: number) =>
     mergeModels(
-      buildModel(recalculateCashflow(baseCashflowData!, r), STO_FLOW_CONFIG),
+      buildModel(recalculateCashflow(baseCashflowData!, r), STO_GROUP_CONFIG),
       buildModel(recalculateCashflow(baseSteCashflowData!, r), STE_GROUP_CONFIG)
     );
 
