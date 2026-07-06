@@ -130,23 +130,34 @@ const PlanTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-// ── 통계 타일 (전년比 델타칩) ──
+// ── 통계 타일 (전년比 델타칩 + YoY%) ──
 const Tile = ({ label, value, accent, signed, hero, delta }: {
   label: string; value: number; accent?: string; signed?: boolean; hero?: boolean; delta?: number;
-}) => (
-  <div className="rounded-xl border bg-white px-4 py-3 flex flex-col justify-between" style={{ borderColor: 'rgba(11,11,11,0.10)' }}>
-    <div className="text-[11px] font-medium tracking-wide" style={{ color: C.muted }}>{label}</div>
-    <div className={hero ? 'font-semibold leading-none mt-2' : 'font-semibold leading-none mt-1.5 tabular-nums'}
-      style={{ color: accent ?? C.textPri, fontSize: hero ? 30 : 20 }}>
-      {signed ? fmtSigned(value) : fmt(value)}
-    </div>
-    {delta !== undefined && (
-      <div className="mt-1.5 text-[10.5px] font-semibold tabular-nums" style={{ color: delta >= 0 ? C.up : C.down }}>
-        전년比 {fmtSigned(delta)}
+}) => {
+  const prev = delta !== undefined ? value - delta : undefined;
+  // 전년·당년 모두 양수일 때만 YoY(당년/전년 비율) 표기
+  const showYoY = delta !== undefined && value > 0 && (prev as number) > 0;
+  const yoy = showYoY ? (value / (prev as number)) * 100 : 0;
+  return (
+    <div className="rounded-xl border bg-white px-4 py-3 flex flex-col justify-between" style={{ borderColor: 'rgba(11,11,11,0.10)' }}>
+      <div className="text-[11px] font-medium tracking-wide" style={{ color: C.muted }}>{label}</div>
+      <div className={hero ? 'font-semibold leading-none mt-2' : 'font-semibold leading-none mt-1.5 tabular-nums'}
+        style={{ color: accent ?? C.textPri, fontSize: hero ? 30 : 20 }}>
+        {signed ? fmtSigned(value) : fmt(value)}
       </div>
-    )}
-  </div>
-);
+      {delta !== undefined && (
+        <div className="mt-1.5 text-[10.5px] font-semibold tabular-nums" style={{ color: delta >= 0 ? C.up : C.down }}>
+          전년比 {fmtSigned(delta)}
+        </div>
+      )}
+      {showYoY && (
+        <div className="mt-0.5 text-[10.5px] font-semibold tabular-nums" style={{ color: yoy >= 100 ? C.up : C.down }}>
+          YoY {yoy.toFixed(1)}%
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ChartCard = ({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) => (
   <div className="rounded-xl border bg-white" style={{ borderColor: 'rgba(11,11,11,0.10)' }}>
