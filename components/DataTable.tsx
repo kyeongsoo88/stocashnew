@@ -80,7 +80,7 @@ function buildTree(rows: string[][]): TreeRow[] {
 
     } else if (isL1_비용 && l1Parent?.data[0]?.includes('비용지출')) {
       const colorIdx = l1Parent.children.length;
-      l1Parent.children.push({ id, data: row, children: [], level: 2, colorIdx });
+      l1Parent.children.push({ id, data: row, children: [], level: (l1Parent.level ?? 1) + 1, colorIdx });
 
     } else if (isL1_영업 && l0Parent?.data[0]?.includes('영업활동')) {
       const colorIdx = l0Parent.children.length;
@@ -97,6 +97,12 @@ function buildTree(rows: string[][]): TreeRow[] {
     } else if (isL1_로열티 && l0Parent?.data[0]?.includes('로열티수금')) {
       const colorIdx = l0Parent.children.length;
       l0Parent.children.push({ id, data: row, children: [], level: 1, colorIdx });
+
+    } else if (name.includes('비용지출')) {
+      // STE 등 영업활동 부모가 없는 경우: 비용지출을 독립 부모로, 하위 비용은 자식으로 묶음
+      l0Parent = null;
+      l1Parent = { id, data: row, children: [], level: 0 };
+      roots.push(l1Parent);
 
     } else {
       // fallback: orphan → root
