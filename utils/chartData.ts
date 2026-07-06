@@ -102,7 +102,9 @@ export const STE_FLOW_CONFIG: FlowConfig = {
   openingRow: '기초잔액',
   closingRow: '환원 후 기말잔액', // 주주환원(-4,000)을 반영한 실제 연말 잔액(319)
   operatingRows: ['로열티수금', '비용지출'],
-  financingRows: ['STO 감자/배당'], // 재무활동 순계는 STO감자만(-18,292), 주주환원은 별도 카드로 분리
+  // 월별 재무활동/기말 정합성을 위해 주주환원 포함(→ 12월 -4,000, 기말 319).
+  // KPI '재무활동 순계' 카드는 주주환원을 빼고 표기(-18,292), 주주환원은 별도 카드로 분리.
+  financingRows: ['STO 감자/배당', '26년 기말 주주환원'],
   inflowRows: ['BBUK', 'Movin', 'Benjamin', 'SUGI', 'SUGI FR', 'Silver', 'BDS'],
   outflowRows: ['법률비용', '광고선전비', '기타비용'],
   financingDetailRows: [

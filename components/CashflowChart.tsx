@@ -254,6 +254,11 @@ export const CashflowChart = ({ model, threshold, compact = false }: Props) => {
   const prevNet = (planByMetric['기말잔액']?.prev ?? 0) - (planByMetric['기초잔액']?.prev ?? 0);
   const dNet = summary.net - prevNet;
 
+  // 주주환원(별도 카드)을 재무활동 순계 카드에서 분리 — 월별/기말은 주주환원 포함, 카드는 제외 표기
+  const srDelta = sr ? sr.value - sr.prev : 0;
+  const fiNet = sr ? summary.fiSum - sr.value : summary.fiSum;
+  const fiNetDelta = sr ? dFi - srDelta : dFi;
+
   const insights = useMemo(() => {
     if (flow.length === 0) return [] as { tone: 'up' | 'down' | 'flat'; text: string }[];
     const netByMonth = flow.map((m) => ({ month: m.month, net: m.operating + m.financing }));
@@ -261,11 +266,11 @@ export const CashflowChart = ({ model, threshold, compact = false }: Props) => {
     const maxIn = netByMonth.reduce((a, b) => (b.net > a.net ? b : a));
     const out: { tone: 'up' | 'down' | 'flat'; text: string }[] = [];
     out.push({ tone: summary.net >= 0 ? 'up' : 'down', text: `연간 순증감 ${fmtSigned(summary.net)} — 기초 ${fmt(summary.opening)}에서 기말 ${fmt(summary.closing)}로 ${summary.net >= 0 ? '증가' : '감소'} (전년比 ${fmtSigned(dNet)})` });
-    out.push({ tone: summary.opSum >= 0 ? 'up' : 'down', text: `영업활동 순계 ${fmtSigned(summary.opSum)}로 ${summary.opSum >= 0 ? '현금 창출' : '현금 소진'}, 재무활동 ${fmtSigned(summary.fiSum)}` });
+    out.push({ tone: summary.opSum >= 0 ? 'up' : 'down', text: `영업활동 순계 ${fmtSigned(summary.opSum)}로 ${summary.opSum >= 0 ? '현금 창출' : '현금 소진'}, 재무활동 ${fmtSigned(fiNet)}` });
     if (lowPoint) out.push({ tone: lowPoint.closing < threshold ? 'down' : 'flat', text: `최저 유동성은 ${lowPoint.month} ${fmt(lowPoint.closing)}${lowPoint.closing < threshold ? ` — 안전선(${fmt(threshold)}) 하회` : ' (안전선 이상)'}` });
     out.push({ tone: 'down', text: `월 최대 순유출 ${maxOut.month} ${fmt(maxOut.net)}, 최대 순유입 ${maxIn.month} ${fmtSigned(maxIn.net)}` });
     return out;
-  }, [flow, summary, lowPoint, threshold, dNet]);
+  }, [flow, summary, lowPoint, threshold, dNet, fiNet]);
 
   return (
     <div className="space-y-4" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
@@ -273,9 +278,9 @@ export const CashflowChart = ({ model, threshold, compact = false }: Props) => {
       <div className={sr ? 'grid grid-cols-6 gap-3' : 'grid grid-cols-5 gap-3'}>
         <Tile label="기초잔액 (연초)" value={summary.opening} accent={C.textSec} delta={dOpen} />
         <Tile label="영업활동 순계" value={summary.opSum} accent={summary.opSum >= 0 ? C.up : C.down} signed delta={dOp} />
-        <Tile label="재무활동 순계" value={summary.fiSum} accent={summary.fiSum >= 0 ? C.up : C.down} signed delta={dFi} />
+        <Tile label="재무활동 순계" value={fiNet} accent={fiNet >= 0 ? C.up : C.down} signed delta={fiNetDelta} />
         {sr && (
-          <Tile label="STE주주환원" value={sr.value} accent={sr.value >= 0 ? C.up : C.down} signed delta={sr.value - sr.prev} />
+          <Tile label="STE주주환원" value={sr.value} accent={sr.value >= 0 ? C.up : C.down} signed delta={srDelta} />
         )}
         <Tile label="기말잔액 (연말)" value={summary.closing} accent={C.wfTotal} hero delta={dClose} />
         <Tile label="연간 순증감" value={summary.net} accent={summary.net >= 0 ? C.up : C.down} signed delta={dNet} />
