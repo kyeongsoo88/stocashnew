@@ -176,13 +176,22 @@ export const extractMonthlyFlow = (data: ParsedData, config: FlowConfig): Monthl
   }));
 };
 
-const colIndex = (headers: string[], name: string) => headers.indexOf(name);
+// RF_xx 컬럼을 동적으로 인식 (RF_04/RF_05 → RF_05/RF_06 처럼 이름이 바뀌어도 안전)
+// 가장 마지막 RF = 현재 전망, 그 앞 RF = 이전 계획
+const rfColumns = (headers: string[]): { prevPlan: number; forecast: number } => {
+  const idx = headers
+    .map((h, i) => ({ h: (h ?? '').trim(), i }))
+    .filter((x) => /^RF_\d+$/.test(x.h))
+    .map((x) => x.i);
+  const forecast = idx.length ? idx[idx.length - 1] : -1;
+  const prevPlan = idx.length > 1 ? idx[idx.length - 2] : forecast;
+  return { prevPlan, forecast };
+};
 
 export const extractPlan = (data: ParsedData, config: FlowConfig): PlanRow[] => {
   const findRow = (name: string) => data.rows.find((r) => (r[0] ?? '').trim() === name);
   const iPrev = 1;
-  const iR4 = colIndex(data.headers, 'RF_04');
-  const iR5 = colIndex(data.headers, 'RF_05');
+  const { prevPlan: iR4, forecast: iR5 } = rfColumns(data.headers);
   const sum = (names: string[], col: number) =>
     names.reduce((s, n) => { const r = findRow(n); return s + (r ? toNumber(r[col]) : 0); }, 0);
   const one = (name: string, col: number) => { const r = findRow(name); return r ? toNumber(r[col]) : 0; };
@@ -197,7 +206,7 @@ export const extractPlan = (data: ParsedData, config: FlowConfig): PlanRow[] => 
 
 export const extractComposition = (data: ParsedData, config: FlowConfig): Composition => {
   const findRow = (name: string) => data.rows.find((r) => (r[0] ?? '').trim() === name);
-  const iR5 = colIndex(data.headers, 'RF_05');
+  const { forecast: iR5 } = rfColumns(data.headers);
   const pick = (names: string[]) =>
     names
       .map((n) => { const r = findRow(n); return { name: n, value: r ? toNumber(r[iR5]) : 0 }; })
