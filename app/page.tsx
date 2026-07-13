@@ -11,6 +11,7 @@ import { STO_FLOW_CONFIG, STE_FLOW_CONFIG, STO_GROUP_CONFIG, STE_GROUP_CONFIG, b
 import {
   Loader2,
   Printer,
+  Download,
 } from "lucide-react";
 
 export default function Home() {
@@ -189,6 +190,58 @@ export default function Home() {
     setInputValue(String(rate));
   };
 
+  // 표 보기 데이터를 JSON으로 내보내기 (현재 성장률 반영된 값 기준)
+  const handleDownloadJson = () => {
+    // "1,234" → 1234, "(1,234)" → -1234, 숫자가 아니면 원문 유지
+    const parseVal = (v: string): string | number => {
+      const s = (v ?? '').trim();
+      if (s === '') return '';
+      const isParenNeg = s.startsWith('(') && s.endsWith(')');
+      const cleaned = s.replace(/[(),\s]/g, '');
+      if (cleaned === '' || isNaN(Number(cleaned))) return s;
+      const n = Number(cleaned);
+      return isParenNeg ? -n : n;
+    };
+
+    const toTable = (data: ParsedData | null, details: Record<string, string>) => {
+      if (!data) return null;
+      return {
+        headers: data.headers,
+        rows: data.rows.map((r) => {
+          const obj: Record<string, string | number> = {};
+          data.headers.forEach((h, i) => { obj[h] = parseVal(r[i] ?? ''); });
+          const name = (r[0] ?? '').trim();
+          if (details[name]) obj['상세'] = details[name];
+          return obj;
+        }),
+      };
+    };
+
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      growthRate,
+      unit: 'K$',
+      tables: {
+        'STO 현금흐름표': toTable(cashflowData, cashflowDetails),
+        'STE 현금흐름표': toTable(steCashflowData, steCashflowDetails),
+        '현금잔액과 차입금잔액표': toTable(cashloanData, cashloanDetails),
+        '운전자본표': toTable(workingCapitalData, workingCapitalDetails),
+      },
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const d = new Date();
+    const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    a.href = url;
+    a.download = `자금계획_매출${growthRate}퍼센트_${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // 그래프 모델 (성장률 반영된 데이터 기준)
   const stoModel = useMemo(
     () => (cashflowData ? buildModel(cashflowData, STO_FLOW_CONFIG) : null),
@@ -317,6 +370,17 @@ export default function Home() {
                 <span className="text-white font-medium text-base">%</span>
               </div>
             </div>
+
+            {/* JSON 다운로드 (표 보기) */}
+            {viewMode === 'table' && (
+              <button
+                onClick={handleDownloadJson}
+                title="표 보기의 4개 표 데이터를 JSON으로 저장 (현재 성장률 반영)"
+                className="ml-3 px-4 py-2 bg-blue-800 text-white font-medium rounded hover:bg-blue-700 transition-colors flex items-center gap-1.5 border border-blue-600 whitespace-nowrap"
+              >
+                <Download size={16} /> JSON 다운로드
+              </button>
+            )}
           </div>
         </div>
       </header>
